@@ -252,7 +252,7 @@ class TestIntegrateEstimateStep(TestIntegrateBase):
 
         value2 = 2 * self._icx_factor
         tx1 = self._make_score_call_tx(addr_from=self._addr_array[0], addr_to=score_addr1, method="set_value",
-                                                     params={"value": hex(value2)})
+                                       params={"value": hex(value2)})
         prev_block, tx_results = self._make_and_req_block([tx1])
         self._write_precommit_state(prev_block)
         self.assertEqual(tx_results[0].status, int(True))
@@ -421,16 +421,16 @@ class TestIntegrateEstimateStep(TestIntegrateBase):
 
         input_size_rev3 = len(
             '{'
-                f'"{key_content_type}":"{content_type}",'
-                f'"{key_content}":"{content}",'
-                f'"{key_data_params}":'
-                '{'
-                    f'"{data_param_keys[0]}":"{data_param_values[0]}",'
-                    f'"{data_param_keys[1]}":"{data_param_values[1]}",'
-                    f'"{data_param_keys[2]}":"{data_param_values[2]}",'
-                    f'"{data_param_keys[3]}":"{data_param_values[3]}",'
-                    f'"{data_param_keys[4]}":"{data_param_values[4]}"'
-                '}'
+            f'"{key_content_type}":"{content_type}",'
+            f'"{key_content}":"{content}",'
+            f'"{key_data_params}":'
+            '{'
+            f'"{data_param_keys[0]}":"{data_param_values[0]}",'
+            f'"{data_param_keys[1]}":"{data_param_values[1]}",'
+            f'"{data_param_keys[2]}":"{data_param_values[2]}",'
+            f'"{data_param_keys[3]}":"{data_param_values[3]}",'
+            f'"{data_param_keys[4]}":"{data_param_values[4]}"'
+            '}'
             '}'.encode())
 
         expected_steps = self._get_expected_step_count(step_costs, input_size_rev3, content_size)

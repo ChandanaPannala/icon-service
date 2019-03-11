@@ -29,7 +29,7 @@ class TestIissData(unittest.TestCase):
     def test_iiss_header(self):
         h = IissHeader()
         h.version = 10
-        h.block_height = 10 ** 6
+        h.block_height = 10
 
         data: bytes = h.make_value()
         ret_h: 'IissHeader' = h.get_value(data)
@@ -39,8 +39,8 @@ class TestIissData(unittest.TestCase):
 
     def test_iiss_governance_variable(self):
         gv = IissGovernanceVariable()
-        gv.icx_price = 10 ** 18
-        gv.incentive_rep = 10 ** 6
+        gv.icx_price = 10
+        gv.incentive_rep = 10
 
         data: bytes = gv.make_value()
         ret_gv: 'IissGovernanceVariable' = gv.get_value(data)

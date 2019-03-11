@@ -19,7 +19,7 @@ from typing import Any, TYPE_CHECKING, Tuple
 
 import msgpack
 
-from .iiss_data_converter import IissDataConverter
+from .iiss_data_converter import IissDataConverter, TypeTag
 
 if TYPE_CHECKING:
     from ..base.address import Address
@@ -35,16 +35,16 @@ class IissTxType(IntEnum):
 
 class MsgPackUtil:
     @staticmethod
-    def dumps(tag: int, data: Any) -> bytes:
-        return msgpack.dumps([tag, data])
+    def dumps(data: Any) -> bytes:
+        return msgpack.dumps(data)
 
     @staticmethod
-    def loads(data: bytes) -> Tuple:
+    def loads(data: bytes) -> list:
         return msgpack.loads(data)
 
 
 class IissHeader:
-    _prefix = 'HX'
+    _prefix = b'HX'
 
     def __init__(self):
         self.version: int = 0
@@ -59,13 +59,11 @@ class IissHeader:
             self.block_height
         ]
 
-        # db용으로 typeid를 빼는방향
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+        return MsgPackUtil.dumps(data)
 
     @staticmethod
     def get_value(data: bytes) -> 'IissHeader':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+        data_list: list = MsgPackUtil.loads(data)
         obj = IissHeader()
         obj.version: int = data_list[0]
         obj.block_height: int = data_list[1]
@@ -73,7 +71,7 @@ class IissHeader:
 
 
 class IissGovernanceVariable:
-    _prefix = 'gv'
+    _prefix = b'gv'
 
     def __init__(self):
         self.icx_price: int = 0
@@ -87,12 +85,11 @@ class IissGovernanceVariable:
             self.icx_price,
             self.incentive_rep
         ]
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+        return MsgPackUtil.dumps(data)
 
     @staticmethod
     def get_value(data: bytes) -> 'IissGovernanceVariable':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+        data_list: list = MsgPackUtil.loads(data)
         obj = IissGovernanceVariable()
         obj.icx_price: int = data_list[0]
         obj.incentive_rep: int = data_list[1]
@@ -100,7 +97,7 @@ class IissGovernanceVariable:
 
 
 class PrepsData:
-    _prefix = 'prep'
+    _prefix = b'prep'
 
     def __init__(self):
         self.address: 'Address' = None
@@ -118,12 +115,11 @@ class PrepsData:
             self.block_generate_count,
             self.block_validate_count
         ]
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+        return MsgPackUtil.dumps(data)
 
     @staticmethod
     def get_value(address: 'Address', data: bytes) -> 'PrepsData':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+        data_list: list = MsgPackUtil.loads(data)
         obj = PrepsData()
         obj.address: Address = address
         obj.block_generate_count: int = data_list[0]
@@ -132,7 +128,7 @@ class PrepsData:
 
 
 class IissTxData:
-    _prefix = 'TX'
+    _prefix = b'TX'
 
     def __init__(self):
         self.tx_hash: bytes = None
@@ -143,26 +139,25 @@ class IissTxData:
         self.tx_data: Any = None
 
     def make_key(self) -> bytes:
-        prefix: bytes = IissDataConverter.encode(self._prefix)
-        tx_hash: bytes = IissDataConverter.encode(self.tx_hash)
+        prefix: bytes = self._prefix
+        tx_hash: bytes = self.tx_hash
         return prefix + tx_hash
 
     def make_value(self) -> bytes:
         data = [
-            self.address,
+            IissDataConverter.encode(self.address),
             self.block_height,
             self.tx_type,
             self.tx_data.encode()
         ]
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+        return MsgPackUtil.dumps(data)
 
     @staticmethod
     def get_value(tx_hash: bytes, data: bytes) -> 'IissTxData':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+        data_list: list = MsgPackUtil.loads(data)
         obj = IissTxData()
         obj.tx_hash: bytes = tx_hash
-        obj.address: 'Address' = data_list[0]
+        obj.address: 'Address' = IissDataConverter.decode(TypeTag.ADDRESS, data_list[0])
         obj.block_height: int = data_list[1]
         obj.tx_type: 'IissTxType' = IissTxType(data_list[2])
         obj.tx_data: Any = IissTxData._covert_tx_data(obj.tx_type, data_list[3])
@@ -186,20 +181,18 @@ class IissTxData:
 
 class StakeTx:
     def __init__(self):
+        # BigInt
         self.stake: int = 0
 
     def encode(self) -> bytes:
-        data = [
-            self.stake
-        ]
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+        tag, data = IissDataConverter.encode_any(self.stake)
+        return MsgPackUtil.dumps([tag, data])
 
     @staticmethod
     def decode(data: bytes) -> 'StakeTx':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+        tag, data = MsgPackUtil.loads(data)
         obj = StakeTx()
-        obj.stake: int = data_list[0]
+        obj.stake: int = IissDataConverter.decode(tag, data)
         return obj
 
 
@@ -208,17 +201,14 @@ class DelegationTx:
         self.delegation_info: 'DelegationInfo' = None
 
     def encode(self) -> bytes:
-        data = [
-            self.delegation_info.encode()
-        ]
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+        tag, data = self.delegation_info.encode()
+        return MsgPackUtil.dumps([tag, data])
 
     @staticmethod
     def decode(data: bytes) -> 'DelegationTx':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+        tag, data = MsgPackUtil.loads(data)
         obj = DelegationTx()
-        obj.delegation_info: 'DelegationInfo' = DelegationInfo.decode(data_list[0])
+        obj.delegation_info: 'DelegationInfo' = DelegationInfo.decode(data)
         return obj
 
 
@@ -227,22 +217,23 @@ class DelegationInfo:
         self.address_list: list = []
         self.ratio_list: list = []
 
-    def encode(self) -> bytes:
+    def encode(self) -> Tuple:
         data = []
         for x, y in zip(self.address_list, self.ratio_list):
-            data.append(x)
+            address_bytes: 'bytes' = IissDataConverter.encode(x)
+            data.append(address_bytes)
             data.append(y)
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+
+        return TypeTag.LIST, data
 
     @staticmethod
-    def decode(data: bytes) -> 'DelegationInfo':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+    def decode(data: list) -> 'DelegationInfo':
         obj = DelegationInfo()
 
-        for index, data in enumerate(data_list):
+        for index, data in enumerate(data):
             if index % 2 == 0:
-                obj.address_list.append(data)
+                address: 'Address' = IissDataConverter.decode(TypeTag.ADDRESS, data)
+                obj.address_list.append(address)
             else:
                 obj.ratio_list.append(data)
         return obj
@@ -253,13 +244,12 @@ class ClaimTx:
         pass
 
     def encode(self) -> bytes:
-        data = None
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+        tag, data = IissDataConverter.encode_any(None)
+        return MsgPackUtil.dumps([tag, data])
 
     @staticmethod
     def decode(data: bytes) -> 'ClaimTx':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+        data_list: list = MsgPackUtil.loads(data)
         obj = ClaimTx()
         return obj
 
@@ -269,13 +259,12 @@ class PRepRegisterTx:
         pass
 
     def encode(self) -> bytes:
-        data = None
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+        tag, data = IissDataConverter.encode_any(None)
+        return MsgPackUtil.dumps([tag, data])
 
     @staticmethod
     def decode(data: bytes) -> 'PRepRegisterTx':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+        data_list: list = MsgPackUtil.loads(data)
         obj = PRepRegisterTx()
         return obj
 
@@ -285,12 +274,11 @@ class PRepUnregisterTx:
         pass
 
     def encode(self) -> bytes:
-        data = None
-        tag, value = IissDataConverter.encode_any(data)
-        return MsgPackUtil.dumps(tag, value)
+        tag, data = IissDataConverter.encode_any(None)
+        return MsgPackUtil.dumps([tag, data])
 
     @staticmethod
     def decode(data: bytes) -> 'PRepUnregisterTx':
-        data_list: list = IissDataConverter.decode_any(MsgPackUtil.loads(data))
+        data_list: list = MsgPackUtil.loads(data)
         obj = PRepUnregisterTx()
         return obj

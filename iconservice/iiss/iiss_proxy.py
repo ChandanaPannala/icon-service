@@ -85,10 +85,10 @@ class IissProxy(IconProxy):
         self._handle_calculate_func(success, block_height, state_hash)
 
     def send_claim(self, address: 'Address'):
-        self._client.send(Message.CLAIM, [IissDataConverter.encode(address)])
+        self._client.send(Message.CLAIM, IissDataConverter.encode(address))
 
     def send_query(self, address: 'Address'):
-        self._client.send(Message.QUERY, [IissDataConverter.encode(address)])
+        self._client.send(Message.QUERY, IissDataConverter.encode(address))
 
     def send_calculate(self, path: str, block_height: int):
         self._client.send(Message.CALCULATE, [IissDataConverter.encode(path), IissDataConverter.encode(block_height)])

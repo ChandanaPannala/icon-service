@@ -110,3 +110,20 @@ class IconScoreFuncType(IntEnum):
 
 
 ENABLE_THREAD_FLAG = EnableThreadFlag.INVOKE | EnableThreadFlag.QUERY | EnableThreadFlag.VALIDATE
+
+IISS_METHOD_TABLE = [
+    "setStake",
+    "getStake",
+    "setDelegation",
+    "getDelegation",
+    "claimIScore",
+    "queryIScore",
+    "registerPRepCandidate",
+    "unregisterPRepCandidate",
+    "setPRepCandidate",
+    "getPrepCandidate",
+    "getPRepCandidateStats",
+    "getPRepCandidateDelegationInfo",
+    "getPRepList",
+    "getPRepCandidateList"
+]

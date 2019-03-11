@@ -21,7 +21,7 @@ from iconcommons.logger import Logger
 from .base.address import Address, generate_score_address, generate_score_address_for_tbears
 from .base.address import ZERO_SCORE_ADDRESS, GOVERNANCE_SCORE_ADDRESS
 from .base.block import Block
-from .base.exception import ExceptionCode, RevertException, ScoreErrorException
+from .base.exception import ExceptionCode, RevertException, ScoreErrorException, InvalidParamsException
 from .base.exception import IconServiceBaseException, ServerErrorException
 from .base.message import Message
 from .base.transaction import Transaction
@@ -30,8 +30,8 @@ from .database.factory import ContextDatabaseFactory
 from .deploy.icon_builtin_score_loader import IconBuiltinScoreLoader
 from .deploy.icon_score_deploy_engine import IconScoreDeployEngine
 from .deploy.icon_score_deploy_storage import IconScoreDeployStorage
-from .icon_constant import ICON_DEX_DB_NAME, ICON_SERVICE_LOG_TAG, IconServiceFlag, ConfigKey, \
-    REVISION_3
+from .icon_constant import ICON_DEX_DB_NAME, ICON_SERVICE_LOG_TAG, IconServiceFlag, ConfigKey, REVISION_3, \
+    IISS_METHOD_TABLE
 from .iconscore.icon_pre_validator import IconPreValidator
 from .iconscore.icon_score_class_loader import IconScoreClassLoader
 from .iconscore.icon_score_context import IconScoreContext, IconScoreFuncType, ContextContainer
@@ -44,8 +44,7 @@ from .iconscore.icon_score_result import TransactionResult
 from .iconscore.icon_score_step import IconScoreStepCounterFactory, StepType, get_input_data_size, \
     get_deploy_content_size
 from .iconscore.icon_score_trace import Trace, TraceType
-from iconservice.iiss import IissEngine
-from iconservice.iiss import IissDataStorage
+from iconservice.iiss.iiss_engine import IissEngine
 
 from .icx.icx_account import AccountType
 from .icx.icx_engine import IcxEngine
@@ -136,7 +135,6 @@ class IconServiceEngine(ContextContainer):
         self._icon_score_deploy_engine.open(icon_score_deploy_storage)
 
         # TODO IISS DB Data Init
-        iiss_data_storage = IissDataStorage(self._icx_context_db)
         self._iiss_engine = IissEngine()
         self._iiss_engine.open()
 
@@ -750,9 +748,7 @@ class IconServiceEngine(ContextContainer):
             tx_result.to = params['to']
 
             # process the transaction
-            score_address = self._process_transaction(context, params)
-
-            tx_result.score_address = score_address
+            self._process_transaction(context, params, tx_result)
             tx_result.status = TransactionResult.SUCCESS
         except BaseException as e:
             tx_result.failure = self._get_failure_from_exception(e)
@@ -794,32 +790,54 @@ class IconServiceEngine(ContextContainer):
         :param params: parameters of tx
         :return: estimated steps
         """
-
-        self._process_transaction(context, params)
+        tx_result: 'TransactionResult' = TransactionResult(context.tx, context.block)
+        self._process_transaction(context, params, tx_result)
 
         return context.step_counter.step_used
 
     def _process_transaction(self,
                              context: 'IconScoreContext',
-                             params: dict) -> Optional['Address']:
+                             params: dict,
+                             tx_result: 'TransactionResult') -> None:
         """
         Processes the transaction
 
         :param params: JSON-RPC params
         """
 
+        # Every send_transaction are calculated DEFAULT STEP at first
+        context.step_counter.apply_step(StepType.DEFAULT, 1)
+        input_size = get_input_data_size(context.revision, params.get('data', None))
+        context.step_counter.apply_step(StepType.INPUT, input_size)
+
         # TODO Branch IISS Engine
         if self._check_iiss_process(params):
-            self._process_iiss_transaction(context, params)
+            self._process_iiss_transaction(context, params, tx_result)
         else:
-            return self._process_transaction(context, params)
+            self._process_icx_transaction(context, params, tx_result)
 
     def _check_iiss_process(self, params: dict) -> bool:
+        to: Optional['Address'] = params.get('to')
+        if to != ZERO_SCORE_ADDRESS:
+            return False
+
+        data_type: Optional[str] = params.get('dataType')
+        if data_type != 'call':
+            return False
+
+        data: Optional[dict] = params.get('data')
+        if data is None or not isinstance(data, dict):
+            return False
+
+        method_name: Optional[str] = data.get("method")
+        if method_name in IISS_METHOD_TABLE:
+            return True
         return False
 
     def _process_icx_transaction(self,
                                  context: 'IconScoreContext',
-                                 params: dict) -> Optional['Address']:
+                                 params: dict,
+                                 tx_result: 'TransactionResult') -> None:
         """
         Processes the icx transaction
 
@@ -845,23 +863,15 @@ class IconServiceEngine(ContextContainer):
                     params,
                     step_price=context.step_counter.step_price)
 
-        # Every send_transaction are calculated DEFAULT STEP at first
-        context.step_counter.apply_step(StepType.DEFAULT, 1)
-
-        input_size = get_input_data_size(context.revision, params.get('data', None))
-        context.step_counter.apply_step(StepType.INPUT, input_size)
-
         self._transfer_coin(context, params)
 
-        score_address = None
         if to.is_contract:
-            score_address = self._handle_score_invoke(context, to, params)
-
-        return score_address
+            tx_result.score_address = self._handle_score_invoke(context, to, params)
 
     def _process_iiss_transaction(self,
                                   context: 'IconScoreContext',
-                                  params: dict) -> None:
+                                  params: dict,
+                                  tx_result: 'TransactionResult') -> None:
         """
         Processes the iiss transaction
 
@@ -869,18 +879,16 @@ class IconServiceEngine(ContextContainer):
         """
 
         to: Address = params['to']
+        value: int = params['value']
+
+        if value > 0:
+            raise InvalidParamsException('invalid params: value')
 
         # Check if from account can charge a tx fee
         self._icon_pre_validator.execute_to_check_out_of_balance(
             context,
             params,
             step_price=context.step_counter.step_price)
-
-        # Every send_transaction are calculated DEFAULT STEP at first
-        context.step_counter.apply_step(StepType.DEFAULT, 1)
-
-        input_size = get_input_data_size(context.revision, params.get('data', None))
-        context.step_counter.apply_step(StepType.INPUT, input_size)
 
         self._iiss_engine.invoke(context, to, params)
 
