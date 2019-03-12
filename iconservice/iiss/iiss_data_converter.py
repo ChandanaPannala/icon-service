@@ -19,7 +19,7 @@ from ..icon_constant import CHARSET_ENCODING
 from ..utils import int_to_bytes, bytes_to_int
 from ..base.address import AddressPrefix, Address
 from ..base.exception import InvalidParamsException
-from .iiss_proxy import Codec
+from .ipc.proxy import Codec
 
 
 class TypeTag(IntEnum):
