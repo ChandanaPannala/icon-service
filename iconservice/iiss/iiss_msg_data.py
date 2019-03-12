@@ -16,9 +16,10 @@
 
 from enum import IntEnum
 from typing import Any, TYPE_CHECKING, Tuple
-
+from abc import ABCMeta, abstractmethod
 import msgpack
 
+from ..base.exception import InvalidParamsException
 from .iiss_data_converter import IissDataConverter, TypeTag
 
 if TYPE_CHECKING:
@@ -29,8 +30,9 @@ class IissTxType(IntEnum):
     STAKE = 0
     DELEGATION = 1
     CLAIM = 2
-    PREP_REGISTER = 2
-    PREP_UNREGISTER = 3
+    PREP_REGISTER = 3
+    PREP_UNREGISTER = 4
+    INVALID = 99
 
 
 class MsgPackUtil:
@@ -44,7 +46,7 @@ class MsgPackUtil:
 
 
 class IissHeader:
-    _prefix = b'HX'
+    _prefix = 'HD'
 
     def __init__(self):
         self.version: int = 0
@@ -71,7 +73,7 @@ class IissHeader:
 
 
 class IissGovernanceVariable:
-    _prefix = b'gv'
+    _prefix = 'gv'
 
     def __init__(self):
         self.icx_price: int = 0
@@ -97,11 +99,13 @@ class IissGovernanceVariable:
 
 
 class PrepsData:
-    _prefix = b'prep'
+    _prefix = 'prep'
 
     def __init__(self):
+        # key
         self.address: 'Address' = None
 
+        # value
         self.block_generate_count: int = 0
         self.block_validate_count: int = 0
 
@@ -128,27 +132,41 @@ class PrepsData:
 
 
 class IissTxData:
-    _prefix = b'TX'
+    _prefix = 'TX'
 
     def __init__(self):
+        # key
         self.tx_hash: bytes = None
 
+        # value
         self.address: 'Address' = None
         self.block_height: int = 0
-        self.tx_type: 'IissTxType' = IissTxType.STAKE
-        self.tx_data: Any = None
+        self.tx_type: 'IissTxType' = IissTxType.INVALID
+        self.tx_data: 'IissTx' = None
 
     def make_key(self) -> bytes:
-        prefix: bytes = self._prefix
-        tx_hash: bytes = self.tx_hash
+        prefix: bytes = IissDataConverter.encode(self._prefix)
+        tx_hash: bytes = IissDataConverter.encode(self.tx_hash)
         return prefix + tx_hash
 
     def make_value(self) -> bytes:
+        tx_type: 'IissTxType' = self.tx_type
+        tx_data: 'IissTx' = self.tx_data
+
+        if isinstance(tx_data, IissTx):
+            tx_data_type = tx_data.get_type()
+            if tx_type == IissTxType.INVALID:
+                tx_type = tx_data_type
+            elif tx_type != tx_data_type:
+                raise InvalidParamsException(f"Mismatch TxType: {tx_type}")
+        else:
+            raise InvalidParamsException(f"Invalid TxData: {tx_data}")
+
         data = [
             IissDataConverter.encode(self.address),
             self.block_height,
-            self.tx_type,
-            self.tx_data.encode()
+            tx_type,
+            tx_data.encode()
         ]
         return MsgPackUtil.dumps(data)
 
@@ -160,11 +178,11 @@ class IissTxData:
         obj.address: 'Address' = IissDataConverter.decode(TypeTag.ADDRESS, data_list[0])
         obj.block_height: int = data_list[1]
         obj.tx_type: 'IissTxType' = IissTxType(data_list[2])
-        obj.tx_data: Any = IissTxData._covert_tx_data(obj.tx_type, data_list[3])
+        obj.tx_data: 'IissTx' = IissTxData._covert_tx_data(obj.tx_type, data_list[3])
         return obj
 
     @staticmethod
-    def _covert_tx_data(tx_type: 'IissTxType', data: bytes) -> Any:
+    def _covert_tx_data(tx_type: 'IissTxType', data: bytes) -> 'IissTx':
         if tx_type == IissTxType.STAKE:
             return StakeTx.decode(data)
         elif tx_type == IissTxType.DELEGATION:
@@ -176,13 +194,31 @@ class IissTxData:
         elif tx_type == IissTxType.PREP_UNREGISTER:
             return PRepUnregisterTx.decode(data)
         else:
-            pass
+            raise InvalidParamsException(f"InvalidParams TxType: {tx_type}")
 
 
-class StakeTx:
+class IissTx(metaclass=ABCMeta):
+    @abstractmethod
+    def get_type(self) -> 'IissTxType':
+        pass
+
+    @abstractmethod
+    def encode(self) -> bytes:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def decode(data: bytes) -> 'IissTx':
+        pass
+
+
+class StakeTx(IissTx):
     def __init__(self):
         # BigInt
         self.stake: int = 0
+
+    def get_type(self) -> 'IissTxType':
+        return IissTxType.STAKE
 
     def encode(self) -> bytes:
         tag, data = IissDataConverter.encode_any(self.stake)
@@ -196,9 +232,12 @@ class StakeTx:
         return obj
 
 
-class DelegationTx:
+class DelegationTx(IissTx):
     def __init__(self):
         self.delegation_info: 'DelegationInfo' = None
+
+    def get_type(self) -> 'IissTxType':
+        return IissTxType.DELEGATION
 
     def encode(self) -> bytes:
         tag, data = self.delegation_info.encode()
@@ -239,9 +278,12 @@ class DelegationInfo:
         return obj
 
 
-class ClaimTx:
+class ClaimTx(IissTx):
     def __init__(self):
         pass
+
+    def get_type(self) -> 'IissTxType':
+        return IissTxType.CLAIM
 
     def encode(self) -> bytes:
         tag, data = IissDataConverter.encode_any(None)
@@ -254,9 +296,12 @@ class ClaimTx:
         return obj
 
 
-class PRepRegisterTx:
+class PRepRegisterTx(IissTx):
     def __init__(self):
         pass
+
+    def get_type(self) -> 'IissTxType':
+        return IissTxType.PREP_REGISTER
 
     def encode(self) -> bytes:
         tag, data = IissDataConverter.encode_any(None)
@@ -269,9 +314,12 @@ class PRepRegisterTx:
         return obj
 
 
-class PRepUnregisterTx:
+class PRepUnregisterTx(IissTx):
     def __init__(self):
         pass
+
+    def get_type(self) -> 'IissTxType':
+        return IissTxType.PREP_UNREGISTER
 
     def encode(self) -> bytes:
         tag, data = IissDataConverter.encode_any(None)

@@ -14,32 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from iconservice.iconscore.icon_score_context import IconScoreContext
+import unittest
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    pass
 
 
-class IissEngine:
+class TestIissEngine(unittest.TestCase):
+    pass
 
-    def __init__(self):
-        pass
 
-    def open(self):
-        pass
-
-    def close(self):
-        pass
-
-    def invoke(self, context: 'IconScoreContext',
-               data_type: str,
-               data: dict) -> None:
-        pass
-
-    def query(self, context: IconScoreContext,
-              data_type: str,
-              data: dict) -> object:
-       pass
-
-    def commit(self):
-        pass
-
-    def rollback(self):
-        pass
+if __name__ == '__main__':
+    unittest.main()

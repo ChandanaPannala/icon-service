@@ -18,7 +18,8 @@ from typing import Tuple, Any, Union
 from ..icon_constant import CHARSET_ENCODING
 from ..utils import int_to_bytes, bytes_to_int
 from ..base.address import AddressPrefix, Address
-from .ipc.proxy import Codec
+from ..base.exception import InvalidParamsException
+from .iiss_proxy import Codec
 
 
 class TypeTag(IntEnum):
@@ -31,16 +32,6 @@ class TypeTag(IntEnum):
     CUSTOM = 10
     INT = CUSTOM + 1
     ADDRESS = CUSTOM
-
-
-class DataType(IntEnum):
-    INTEGER = 1
-    STRING = 2
-    BYTES = 3
-    BOOL = 4
-    ADDRESS = 5
-    LIST = 6
-    DICT = 7
 
 
 def address_to_bytes(addr: 'Address') -> bytes:
@@ -60,13 +51,13 @@ class IissCodec(Codec):
     def encode(self, obj) -> Tuple[int, bytes]:
         if isinstance(obj, Address):
             return TypeTag.ADDRESS, address_to_bytes(obj)
-        raise Exception
+        raise InvalidParamsException(f"Invalid encode type: {type(obj)}")
 
     def decode(self, t: int, b: bytes) -> Any:
         if t == TypeTag.ADDRESS:
             return bytes_to_address(b)
         else:
-            raise Exception(f"UnknownType: {type(t)}")
+            raise InvalidParamsException(f"UnknownType: {type(t)}")
 
 
 class IissDataConverter:
@@ -74,6 +65,11 @@ class IissDataConverter:
 
     @classmethod
     def decode(cls, tag: int, val: bytes) -> 'Any':
+        if tag == TypeTag.NIL:
+            if val == b'':
+                return None
+            else:
+                raise InvalidParamsException(f"Invalid tag type:{tag} value: {val}")
         if tag == TypeTag.BYTES:
             return val
         elif tag == TypeTag.STRING:
