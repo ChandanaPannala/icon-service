@@ -234,32 +234,36 @@ class StakeTx(IissTx):
 
 class DelegationTx(IissTx):
     def __init__(self):
-        self.delegation_info: 'DelegationInfo' = None
+        self.delegation_info: list = []
 
     def get_type(self) -> 'IissTxType':
         return IissTxType.DELEGATION
 
     def encode(self) -> tuple:
-        return self.delegation_info.encode()
+        data = [x.encode() for x in self.delegation_info]
+        return IissDataConverter.encode_any(data)
 
     @staticmethod
     def decode(data: tuple) -> 'DelegationTx':
+        data_list: list = IissDataConverter.decode_any(data)
         obj = DelegationTx()
-        obj.delegation_info: 'DelegationInfo' = DelegationInfo.decode(data)
+        obj.delegation_info: list = [DelegationInfo.decode(x) for x in data_list]
         return obj
 
 
 class DelegationInfo(object):
     def __init__(self):
-        self.delegate: list = []
+        self.address: 'Address' = None
+        self.ratio: int = None
 
-    def encode(self) -> tuple:
-        return IissDataConverter.encode_any(self.delegate)
+    def encode(self) -> list:
+        return [self.address, self.ratio]
 
     @staticmethod
-    def decode(data: tuple) -> 'DelegationInfo':
+    def decode(data: list) -> 'DelegationInfo':
         obj = DelegationInfo()
-        obj.delegate = IissDataConverter.decode_any(data)
+        obj.address = data[0]
+        obj.ratio = data[1]
         return obj
 
 
