@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from ..database.db import ContextDatabase
 
 
-class IissDataStorage:
+class IissDataStorage(object):
 
     def __init__(self, db: 'ContextDatabase') -> None:
         """Constructor

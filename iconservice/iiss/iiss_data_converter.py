@@ -15,11 +15,11 @@
 from enum import IntEnum
 from typing import Tuple, Any, Union
 
-from ..icon_constant import CHARSET_ENCODING
-from ..utils import int_to_bytes, bytes_to_int
+from .ipc.proxy import Codec
 from ..base.address import AddressPrefix, Address
 from ..base.exception import InvalidParamsException
-from .ipc.proxy import Codec
+from ..icon_constant import CHARSET_ENCODING
+from ..utils import int_to_bytes, bytes_to_int
 
 
 class TypeTag(IntEnum):
@@ -60,7 +60,7 @@ class IissCodec(Codec):
             raise InvalidParamsException(f"UnknownType: {type(t)}")
 
 
-class IissDataConverter:
+class IissDataConverter(object):
     codec: 'Codec' = IissCodec()
 
     @classmethod
@@ -90,10 +90,7 @@ class IissDataConverter:
         elif isinstance(o, bytes):
             return o
         elif isinstance(o, bool):
-            if o:
-                return b'\x01'
-            else:
-                return b'\x00'
+            return b'\x01' if o else b'\x00'
         else:
             t, v = cls.codec.encode(o)
             return v
@@ -128,7 +125,7 @@ class IissDataConverter:
             for k, v in o.items():
                 m[k] = cls.encode_any(v)
             return TypeTag.DICT, m
-        elif isinstance(o, list) or isinstance(o, tuple):
+        elif isinstance(o, (list, tuple)):
             lst = []
             for v in o:
                 lst.append(cls.encode_any(v))

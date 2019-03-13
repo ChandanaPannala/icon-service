@@ -14,13 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from enum import IntEnum
-from typing import Any, TYPE_CHECKING, Tuple
 from abc import ABCMeta, abstractmethod
+from enum import IntEnum
+from typing import Any, TYPE_CHECKING
+
 import msgpack
 
-from ..base.exception import InvalidParamsException
 from .iiss_data_converter import IissDataConverter, TypeTag
+from ..base.exception import InvalidParamsException
 
 if TYPE_CHECKING:
     from ..base.address import Address
@@ -35,7 +36,7 @@ class IissTxType(IntEnum):
     INVALID = 99
 
 
-class MsgPackUtil:
+class MsgPackUtil(object):
     @staticmethod
     def dumps(data: Any) -> bytes:
         return msgpack.dumps(data)
@@ -45,7 +46,7 @@ class MsgPackUtil:
         return msgpack.loads(data)
 
 
-class IissHeader:
+class IissHeader(object):
     _prefix = 'HD'
 
     def __init__(self):
@@ -72,7 +73,7 @@ class IissHeader:
         return obj
 
 
-class IissGovernanceVariable:
+class IissGovernanceVariable(object):
     _prefix = 'gv'
 
     def __init__(self):
@@ -98,7 +99,7 @@ class IissGovernanceVariable:
         return obj
 
 
-class PrepsData:
+class PrepsData(object):
     _prefix = 'prep'
 
     def __init__(self):
@@ -131,7 +132,7 @@ class PrepsData:
         return obj
 
 
-class IissTxData:
+class IissTxData(object):
     _prefix = 'TX'
 
     def __init__(self):
@@ -183,7 +184,7 @@ class IissTxData:
         return obj
 
     @staticmethod
-    def _covert_tx_data(tx_type: 'IissTxType', data: bytes) -> Any:
+    def _covert_tx_data(tx_type: 'IissTxType', data: tuple) -> Any:
         if tx_type == IissTxType.STAKE:
             return StakeTx.decode(data)
         elif tx_type == IissTxType.DELEGATION:
@@ -198,7 +199,7 @@ class IissTxData:
             raise InvalidParamsException(f"InvalidParams TxType: {tx_type}")
 
 
-class IissTx(metaclass=ABCMeta):
+class IissTx(object, metaclass=ABCMeta):
     @abstractmethod
     def get_type(self) -> 'IissTxType':
         pass
@@ -248,7 +249,7 @@ class DelegationTx(IissTx):
         return obj
 
 
-class DelegationInfo:
+class DelegationInfo(object):
     def __init__(self):
         self.delegate: list = []
 

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from ..base.address import Address
 
 
-class IissSocketEngine:
+class IissSocketEngine(object):
     def __init__(self, proxy: 'IissProxy'):
         self._proxy = proxy
         self._proxy.set_version_func(self._handle_version)

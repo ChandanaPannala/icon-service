@@ -17,7 +17,7 @@
 from iconservice.iconscore.icon_score_context import IconScoreContext
 
 
-class IissEngine:
+class IissEngine(object):
 
     def __init__(self):
         pass

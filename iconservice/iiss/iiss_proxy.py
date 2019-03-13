@@ -15,9 +15,9 @@
 from enum import IntEnum
 from typing import Callable
 
-from ..base.address import Address
 from .iiss_data_converter import IissDataConverter, TypeTag
 from .ipc.proxy import IconProxy
+from ..base.address import Address
 
 
 class Message(IntEnum):
