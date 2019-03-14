@@ -23,7 +23,9 @@ if TYPE_CHECKING:
 class IissEngine:
 
     def __init__(self):
-        # self._iiss_data_db = None # iiss_data_level_db_instance (#쿼리 불가)
+
+        # iiss데이터db가 글로벌 정보는 임시로 저장
+        # self._iiss_data_db = None # iiss_data_level_db_instance
         # self._context_data_db = None # iiss용 상태db저장용, 만약 이렇게 가는거면 기존 state와 독립적으로 가야함. ex)account
         # self._perp_list: list = [] # 후보자 관리
         # self._socket_engine = None # IPC 통신을 하기위한 엔

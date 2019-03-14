@@ -20,6 +20,7 @@ from typing import Any, TYPE_CHECKING
 
 import msgpack
 
+from ..icon_constant import DATA_BYTE_ORDER
 from .iiss_data_converter import IissDataConverter, TypeTag
 from ..base.exception import InvalidParamsException
 
@@ -137,22 +138,22 @@ class IissTxData(object):
 
     def __init__(self):
         # key
-        self.tx_hash: bytes = None
+        self.index: int = 0
 
         # value
         self.address: 'Address' = None
         self.block_height: int = 0
-        self.tx_type: 'IissTxType' = IissTxType.INVALID
-        self.tx_data: 'IissTx' = None
+        self.type: 'IissTxType' = IissTxType.INVALID
+        self.data: 'IissTx' = None
 
     def make_key(self) -> bytes:
         prefix: bytes = IissDataConverter.encode(self._prefix)
-        tx_hash: bytes = IissDataConverter.encode(self.tx_hash)
-        return prefix + tx_hash
+        tx_index: bytes = self.index.to_bytes(8, byteorder=DATA_BYTE_ORDER)
+        return prefix + tx_index
 
     def make_value(self) -> bytes:
-        tx_type: 'IissTxType' = self.tx_type
-        tx_data: 'IissTx' = self.tx_data
+        tx_type: 'IissTxType' = self.type
+        tx_data: 'IissTx' = self.data
 
         if isinstance(tx_data, IissTx):
             tx_data_type = tx_data.get_type()
@@ -173,14 +174,14 @@ class IissTxData(object):
         return MsgPackUtil.dumps(data)
 
     @staticmethod
-    def get_value(tx_hash: bytes, data: bytes) -> 'IissTxData':
+    def get_value(tx_index: int, data: bytes) -> 'IissTxData':
         data_list: list = MsgPackUtil.loads(data)
         obj = IissTxData()
-        obj.tx_hash: bytes = tx_hash
+        obj.index: int = tx_index
         obj.address: 'Address' = IissDataConverter.decode(TypeTag.ADDRESS, data_list[0])
         obj.block_height: int = data_list[1]
-        obj.tx_type: 'IissTxType' = IissTxType(data_list[2])
-        obj.tx_data: 'IissTx' = IissTxData._covert_tx_data(obj.tx_type, data_list[3])
+        obj.type: 'IissTxType' = IissTxType(data_list[2])
+        obj.data: 'IissTx' = IissTxData._covert_tx_data(obj.type, data_list[3])
         return obj
 
     @staticmethod

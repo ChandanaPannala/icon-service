@@ -47,54 +47,53 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.iiss_prep.block_validate_count = 10
 
         self.tx_stake: 'IissTxData' = IissTxData()
-        self.tx_stake.tx_hash: bytes = b'tx_hash1'
+        self.tx_stake.index: int = 0
         self.tx_stake.address: 'Address' = create_address(data=b'addr2')
         self.tx_stake.block_height: int = 10 ** 3
-        self.tx_stake.tx_type: 'IissTxType' = IissTxType.STAKE
-        self.tx_stake.tx_data: 'StakeTx' = StakeTx()
-        self.tx_stake.tx_data.stake: int = 10 ** 18
+        self.tx_stake.type: 'IissTxType' = IissTxType.STAKE
+        self.tx_stake.data: 'StakeTx' = StakeTx()
+        self.tx_stake.data.stake: int = 10 ** 18
 
         self.tx_delegate: 'IissTxData' = IissTxData()
-        self.tx_delegate.tx_hash: bytes = b'tx_hash2'
+        self.tx_delegate.index: int = 1
         self.tx_delegate.address: 'Address' = create_address(data=b'addr3')
         self.tx_delegate.block_height: int = 10 ** 3
-        self.tx_delegate.tx_type: 'IissTxType' = IissTxType.DELEGATION
-        self.tx_delegate.tx_data: 'DelegationTx' = DelegationTx()
+        self.tx_delegate.type: 'IissTxType' = IissTxType.DELEGATION
+        self.tx_delegate.data: 'DelegationTx' = DelegationTx()
 
         delegate_info: 'DelegationInfo' = DelegationInfo()
         delegate_info.address = create_address(data=b'addr4')
         delegate_info.ratio = 10
-        self.tx_delegate.tx_data.delegation_info.append(delegate_info)
+        self.tx_delegate.data.delegation_info.append(delegate_info)
 
         delegate_info: 'DelegationInfo' = DelegationInfo()
         delegate_info.address = create_address(data=b'addr5')
         delegate_info.ratio = 20
-        self.tx_delegate.tx_data.delegation_info.append(delegate_info)
+        self.tx_delegate.data.delegation_info.append(delegate_info)
 
         self.tx_claim: 'IissTxData' = IissTxData()
-        self.tx_claim.tx_hash: bytes = b'tx_hash3'
+        self.tx_claim.index: int = 2
         self.tx_claim.address: 'Address' = create_address(data=b'addr6')
         self.tx_claim.block_height: int = 10 ** 3
-        self.tx_claim.tx_type: 'IissTxType' = IissTxType.CLAIM
-        self.tx_claim.tx_data: 'ClaimTx' = ClaimTx()
+        self.tx_claim.type: 'IissTxType' = IissTxType.CLAIM
+        self.tx_claim.data: 'ClaimTx' = ClaimTx()
 
         self.tx_prep_reg: 'IissTxData' = IissTxData()
-        self.tx_prep_reg.tx_hash: bytes = b'tx_hash4'
+        self.tx_prep_reg.index: int = 3
         self.tx_prep_reg.address: 'Address' = create_address(data=b'addr7')
         self.tx_prep_reg.block_height: int = 10 ** 3
-        self.tx_prep_reg.tx_type: 'IissTxType' = IissTxType.PREP_REGISTER
-        self.tx_prep_reg.tx_data: 'PRepRegisterTx' = PRepRegisterTx()
+        self.tx_prep_reg.type: 'IissTxType' = IissTxType.PREP_REGISTER
+        self.tx_prep_reg.data: 'PRepRegisterTx' = PRepRegisterTx()
 
         self.tx_prep_un_reg: 'IissTxData' = IissTxData()
-        self.tx_prep_un_reg.tx_hash: bytes = b'tx_hash5'
+        self.tx_prep_un_reg.index: int = 4
         self.tx_prep_un_reg.address: 'Address' = create_address(data=b'addr8')
         self.tx_prep_un_reg.block_height: int = 10 ** 3
-        self.tx_prep_un_reg.tx_type: 'IissTxType' = IissTxType.PREP_UNREGISTER
-        self.tx_prep_un_reg.tx_data: 'PRepUnregisterTx' = PRepUnregisterTx()
+        self.tx_prep_un_reg.type: 'IissTxType' = IissTxType.PREP_UNREGISTER
+        self.tx_prep_un_reg.data: 'PRepUnregisterTx' = PRepUnregisterTx()
 
     def tearDown(self):
         rmtree(self.db_path)
-        pass
 
     def test_iiss_data_using_level_db(self):
         self._dump_mock_db()
@@ -123,55 +122,55 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
     def test_iiss_tx_data_stake(self):
         data: bytes = self.tx_stake.make_value()
-        ret_tx: 'IissTxData' = self.tx_stake.get_value(self.tx_stake.tx_hash, data)
+        ret_tx: 'IissTxData' = self.tx_stake.get_value(self.tx_stake.index, data)
 
-        self.assertEqual(self.tx_stake.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_stake.index, ret_tx.index)
         self.assertEqual(self.tx_stake.address, ret_tx.address)
         self.assertEqual(self.tx_stake.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_stake.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_stake.type, ret_tx.type)
 
-        self.assertEqual(self.tx_stake.tx_data.stake, ret_tx.tx_data.stake)
+        self.assertEqual(self.tx_stake.data.stake, ret_tx.data.stake)
 
     def test_iiss_tx_data_delegate(self):
         data: bytes = self.tx_delegate.make_value()
-        ret_tx: 'IissTxData' = self.tx_delegate.get_value(self.tx_delegate.tx_hash, data)
+        ret_tx: 'IissTxData' = self.tx_delegate.get_value(self.tx_delegate.index, data)
 
-        self.assertEqual(self.tx_delegate.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_delegate.index, ret_tx.index)
         self.assertEqual(self.tx_delegate.address, ret_tx.address)
         self.assertEqual(self.tx_delegate.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_delegate.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_delegate.type, ret_tx.type)
 
-        self.assertEqual(self.tx_delegate.tx_data.delegation_info[0].address, ret_tx.tx_data.delegation_info[0].address)
-        self.assertEqual(self.tx_delegate.tx_data.delegation_info[0].ratio, ret_tx.tx_data.delegation_info[0].ratio)
-        self.assertEqual(self.tx_delegate.tx_data.delegation_info[1].address, ret_tx.tx_data.delegation_info[1].address)
-        self.assertEqual(self.tx_delegate.tx_data.delegation_info[1].ratio, ret_tx.tx_data.delegation_info[1].ratio)
+        self.assertEqual(self.tx_delegate.data.delegation_info[0].address, ret_tx.data.delegation_info[0].address)
+        self.assertEqual(self.tx_delegate.data.delegation_info[0].ratio, ret_tx.data.delegation_info[0].ratio)
+        self.assertEqual(self.tx_delegate.data.delegation_info[1].address, ret_tx.data.delegation_info[1].address)
+        self.assertEqual(self.tx_delegate.data.delegation_info[1].ratio, ret_tx.data.delegation_info[1].ratio)
 
     def test_iiss_tx_data_claim(self):
         data: bytes = self.tx_claim.make_value()
-        ret_tx: 'IissTxData' = self.tx_claim.get_value(self.tx_claim.tx_hash, data)
+        ret_tx: 'IissTxData' = self.tx_claim.get_value(self.tx_claim.index, data)
 
-        self.assertEqual(self.tx_claim.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_claim.index, ret_tx.index)
         self.assertEqual(self.tx_claim.address, ret_tx.address)
         self.assertEqual(self.tx_claim.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_claim.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_claim.type, ret_tx.type)
 
     def test_iiss_tx_data_preb_reg_tx(self):
         data: bytes = self.tx_prep_reg.make_value()
-        ret_tx: 'IissTxData' = self.tx_prep_reg.get_value(self.tx_prep_reg.tx_hash, data)
+        ret_tx: 'IissTxData' = self.tx_prep_reg.get_value(self.tx_prep_reg.index, data)
 
-        self.assertEqual(self.tx_prep_reg.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_prep_reg.index, ret_tx.index)
         self.assertEqual(self.tx_prep_reg.address, ret_tx.address)
         self.assertEqual(self.tx_prep_reg.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_prep_reg.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_prep_reg.type, ret_tx.type)
 
     def test_iiss_tx_data_preb_un_reg_tx(self):
         data: bytes = self.tx_prep_un_reg.make_value()
-        ret_tx: 'IissTxData' = self.tx_prep_un_reg.get_value(self.tx_prep_un_reg.tx_hash, data)
+        ret_tx: 'IissTxData' = self.tx_prep_un_reg.get_value(self.tx_prep_un_reg.index, data)
 
-        self.assertEqual(self.tx_prep_un_reg.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_prep_un_reg.index, ret_tx.index)
         self.assertEqual(self.tx_prep_un_reg.address, ret_tx.address)
         self.assertEqual(self.tx_prep_un_reg.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_prep_un_reg.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_prep_un_reg.type, ret_tx.type)
 
     def _dump_mock_db(self):
         key: bytes = self.iiss_header.make_key()
@@ -217,11 +216,11 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
         if self.debug:
             print("===IISS_TX_DATA-1===")
-            print(f"tx_hash: {self.tx_stake.tx_hash}")
+            print(f"index: {self.tx_stake.index}")
             print(f"address: {self.tx_stake.address}")
             print(f"block_height: {self.tx_stake.block_height}")
-            print(f"tx_type: {self.tx_stake.tx_type}")
-            print(f"stake: {self.tx_stake.tx_data.encode()}")
+            print(f"type: {self.tx_stake.type}")
+            print(f"stake: {self.tx_stake.data.encode()}")
             print(f"key: {key}")
             print(f"value: {value}")
             print("")
@@ -232,12 +231,12 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
         if self.debug:
             print("===IISS_TX_DATA-2===")
-            print(f"tx_hash: {self.tx_delegate.tx_hash}")
+            print(f"index: {self.tx_delegate.index}")
             print(f"address: {self.tx_delegate.address}")
             print(f"block_height: {self.tx_delegate.block_height}")
-            print(f"tx_type: {self.tx_delegate.tx_type}")
-            print(f"ori_delegate: {[(str(x.address), x.ratio) for x in self.tx_delegate.tx_data.delegation_info]}")
-            print(f"delegate: {self.tx_delegate.tx_data.encode()}")
+            print(f"type: {self.tx_delegate.type}")
+            print(f"ori_delegate: {[(str(x.address), x.ratio) for x in self.tx_delegate.data.delegation_info]}")
+            print(f"delegate: {self.tx_delegate.data.encode()}")
             print(f"key: {key}")
             print(f"value: {value}")
             print("")
@@ -248,11 +247,11 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
         if self.debug:
             print("===IISS_TX_DATA-3===")
-            print(f"tx_hash: {self.tx_claim.tx_hash}")
+            print(f"index: {self.tx_claim.index}")
             print(f"address: {self.tx_claim.address}")
             print(f"block_height: {self.tx_claim.block_height}")
-            print(f"tx_type: {self.tx_claim.tx_type}")
-            print(f"data: {self.tx_claim.tx_data.encode()}")
+            print(f"type: {self.tx_claim.type}")
+            print(f"data: {self.tx_claim.data.encode()}")
             print(f"key: {key}")
             print(f"value: {value}")
             print("")
@@ -263,11 +262,11 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
         if self.debug:
             print("===IISS_TX_DATA-4===")
-            print(f"tx_hash: {self.tx_prep_reg.tx_hash}")
+            print(f"index: {self.tx_prep_reg.index}")
             print(f"address: {self.tx_prep_reg.address}")
             print(f"block_height: {self.tx_prep_reg.block_height}")
-            print(f"tx_type: {self.tx_prep_reg.tx_type}")
-            print(f"data: {self.tx_prep_reg.tx_data.encode()}")
+            print(f"type: {self.tx_prep_reg.type}")
+            print(f"data: {self.tx_prep_reg.data.encode()}")
             print(f"key: {key}")
             print(f"value: {value}")
             print("")
@@ -278,11 +277,11 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
         if self.debug:
             print("===IISS_TX_DATA-5===")
-            print(f"tx_hash: {self.tx_prep_un_reg.tx_hash}")
+            print(f"index: {self.tx_prep_un_reg.index}")
             print(f"address: {self.tx_prep_un_reg.address}")
             print(f"block_height: {self.tx_prep_un_reg.block_height}")
-            print(f"tx_type: {self.tx_prep_un_reg.tx_type}")
-            print(f"data: {self.tx_prep_un_reg.tx_data.encode()}")
+            print(f"type: {self.tx_prep_un_reg.type}")
+            print(f"data: {self.tx_prep_un_reg.data.encode()}")
             print(f"key: {key}")
             print(f"value: {value}")
             print("")
@@ -311,55 +310,55 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
         key: bytes = self.tx_stake.make_key()
         value = self.db.get(key)
-        ret_tx: 'IissTxData' = self.tx_stake.get_value(self.tx_stake.tx_hash, value)
+        ret_tx: 'IissTxData' = self.tx_stake.get_value(self.tx_stake.index, value)
 
-        self.assertEqual(self.tx_stake.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_stake.index, ret_tx.index)
         self.assertEqual(self.tx_stake.address, ret_tx.address)
         self.assertEqual(self.tx_stake.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_stake.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_stake.type, ret_tx.type)
 
-        self.assertEqual(self.tx_stake.tx_data.stake, ret_tx.tx_data.stake)
+        self.assertEqual(self.tx_stake.data.stake, ret_tx.data.stake)
 
         key: bytes = self.tx_delegate.make_key()
         value = self.db.get(key)
-        ret_tx: 'IissTxData' = self.tx_delegate.get_value(self.tx_delegate.tx_hash, value)
+        ret_tx: 'IissTxData' = self.tx_delegate.get_value(self.tx_delegate.index, value)
 
-        self.assertEqual(self.tx_delegate.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_delegate.index, ret_tx.index)
         self.assertEqual(self.tx_delegate.address, ret_tx.address)
         self.assertEqual(self.tx_delegate.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_delegate.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_delegate.type, ret_tx.type)
 
-        self.assertEqual(self.tx_delegate.tx_data.delegation_info[0].address, ret_tx.tx_data.delegation_info[0].address)
-        self.assertEqual(self.tx_delegate.tx_data.delegation_info[0].ratio, ret_tx.tx_data.delegation_info[0].ratio)
-        self.assertEqual(self.tx_delegate.tx_data.delegation_info[1].address, ret_tx.tx_data.delegation_info[1].address)
-        self.assertEqual(self.tx_delegate.tx_data.delegation_info[1].ratio, ret_tx.tx_data.delegation_info[1].ratio)
+        self.assertEqual(self.tx_delegate.data.delegation_info[0].address, ret_tx.data.delegation_info[0].address)
+        self.assertEqual(self.tx_delegate.data.delegation_info[0].ratio, ret_tx.data.delegation_info[0].ratio)
+        self.assertEqual(self.tx_delegate.data.delegation_info[1].address, ret_tx.data.delegation_info[1].address)
+        self.assertEqual(self.tx_delegate.data.delegation_info[1].ratio, ret_tx.data.delegation_info[1].ratio)
 
         key: bytes = self.tx_claim.make_key()
         value = self.db.get(key)
-        ret_tx: 'IissTxData' = self.tx_claim.get_value(self.tx_claim.tx_hash, value)
+        ret_tx: 'IissTxData' = self.tx_claim.get_value(self.tx_claim.index, value)
 
-        self.assertEqual(self.tx_claim.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_claim.index, ret_tx.index)
         self.assertEqual(self.tx_claim.address, ret_tx.address)
         self.assertEqual(self.tx_claim.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_claim.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_claim.type, ret_tx.type)
 
         key: bytes = self.tx_prep_reg.make_key()
         value = self.db.get(key)
-        ret_tx: 'IissTxData' = self.tx_prep_reg.get_value(self.tx_prep_reg.tx_hash, value)
+        ret_tx: 'IissTxData' = self.tx_prep_reg.get_value(self.tx_prep_reg.index, value)
 
-        self.assertEqual(self.tx_prep_reg.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_prep_reg.index, ret_tx.index)
         self.assertEqual(self.tx_prep_reg.address, ret_tx.address)
         self.assertEqual(self.tx_prep_reg.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_prep_reg.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_prep_reg.type, ret_tx.type)
 
         key: bytes = self.tx_prep_un_reg.make_key()
         value = self.db.get(key)
-        ret_tx: 'IissTxData' = self.tx_prep_un_reg.get_value(self.tx_prep_un_reg.tx_hash, value)
+        ret_tx: 'IissTxData' = self.tx_prep_un_reg.get_value(self.tx_prep_un_reg.index, value)
 
-        self.assertEqual(self.tx_prep_un_reg.tx_hash, ret_tx.tx_hash)
+        self.assertEqual(self.tx_prep_un_reg.index, ret_tx.index)
         self.assertEqual(self.tx_prep_un_reg.address, ret_tx.address)
         self.assertEqual(self.tx_prep_un_reg.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_prep_un_reg.tx_type, ret_tx.tx_type)
+        self.assertEqual(self.tx_prep_un_reg.type, ret_tx.type)
 
 
 if __name__ == '__main__':
