@@ -45,7 +45,7 @@ class IissEngine:
         # self._call(context, data_type, data)
         pass
 
-    def query(self, context: IconScoreContext,
+    def query(self, context: 'IconScoreContext',
               data_type: str,
               data: dict) -> Any:
         # ret = self._call(context, data_type, data)

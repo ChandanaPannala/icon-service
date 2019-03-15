@@ -63,12 +63,12 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
         delegate_info: 'DelegationInfo' = DelegationInfo()
         delegate_info.address = create_address(data=b'addr4')
-        delegate_info.ratio = 10
+        delegate_info.value = 10 ** 10
         self.tx_delegate.data.delegation_info.append(delegate_info)
 
         delegate_info: 'DelegationInfo' = DelegationInfo()
         delegate_info.address = create_address(data=b'addr5')
-        delegate_info.ratio = 20
+        delegate_info.value = 10 ** 20
         self.tx_delegate.data.delegation_info.append(delegate_info)
 
         self.tx_claim: 'IissTxData' = IissTxData()
@@ -94,6 +94,7 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
     def tearDown(self):
         rmtree(self.db_path)
+        pass
 
     def test_iiss_data_using_level_db(self):
         self._dump_mock_db()
@@ -141,9 +142,9 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.assertEqual(self.tx_delegate.type, ret_tx.type)
 
         self.assertEqual(self.tx_delegate.data.delegation_info[0].address, ret_tx.data.delegation_info[0].address)
-        self.assertEqual(self.tx_delegate.data.delegation_info[0].ratio, ret_tx.data.delegation_info[0].ratio)
+        self.assertEqual(self.tx_delegate.data.delegation_info[0].value, ret_tx.data.delegation_info[0].value)
         self.assertEqual(self.tx_delegate.data.delegation_info[1].address, ret_tx.data.delegation_info[1].address)
-        self.assertEqual(self.tx_delegate.data.delegation_info[1].ratio, ret_tx.data.delegation_info[1].ratio)
+        self.assertEqual(self.tx_delegate.data.delegation_info[1].value, ret_tx.data.delegation_info[1].value)
 
     def test_iiss_tx_data_claim(self):
         data: bytes = self.tx_claim.make_value()
@@ -235,7 +236,7 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
             print(f"address: {self.tx_delegate.address}")
             print(f"block_height: {self.tx_delegate.block_height}")
             print(f"type: {self.tx_delegate.type}")
-            print(f"ori_delegate: {[(str(x.address), x.ratio) for x in self.tx_delegate.data.delegation_info]}")
+            print(f"ori_delegate: {[(str(x.address), x.value) for x in self.tx_delegate.data.delegation_info]}")
             print(f"delegate: {self.tx_delegate.data.encode()}")
             print(f"key: {key}")
             print(f"value: {value}")
@@ -329,9 +330,9 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.assertEqual(self.tx_delegate.type, ret_tx.type)
 
         self.assertEqual(self.tx_delegate.data.delegation_info[0].address, ret_tx.data.delegation_info[0].address)
-        self.assertEqual(self.tx_delegate.data.delegation_info[0].ratio, ret_tx.data.delegation_info[0].ratio)
+        self.assertEqual(self.tx_delegate.data.delegation_info[0].value, ret_tx.data.delegation_info[0].value)
         self.assertEqual(self.tx_delegate.data.delegation_info[1].address, ret_tx.data.delegation_info[1].address)
-        self.assertEqual(self.tx_delegate.data.delegation_info[1].ratio, ret_tx.data.delegation_info[1].ratio)
+        self.assertEqual(self.tx_delegate.data.delegation_info[1].value, ret_tx.data.delegation_info[1].value)
 
         key: bytes = self.tx_claim.make_key()
         value = self.db.get(key)

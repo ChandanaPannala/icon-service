@@ -12,20 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Tuple
-from abc import ABCMeta, abstractmethod
-
+from abc import abstractmethod
 from .client import Client
-
-
-class Codec(metaclass=ABCMeta):
-    @abstractmethod
-    def encode(self, o: Any) -> Tuple[int, bytes]:
-        pass
-
-    @abstractmethod
-    def decode(self, t: int, bs: bytes) -> Any:
-        pass
 
 
 class IconProxy:
