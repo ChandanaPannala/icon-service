@@ -95,7 +95,7 @@ class TestAccount(unittest.TestCase):
 
         data = account.to_bytes(REVISION_4)
         self.assertTrue(isinstance(data, bytes))
-        self.assertEqual(14, len(data))
+        self.assertEqual(15, len(data))
 
         account2 = Account.from_bytes(data)
         self.assertFalse(account2.locked)

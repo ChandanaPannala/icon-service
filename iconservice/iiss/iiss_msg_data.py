@@ -115,7 +115,7 @@ class PrepsData(object):
     def get_value(address: 'Address', data: bytes) -> 'PrepsData':
         data_list: list = IissDataConverter.loads(data)
         obj = PrepsData()
-        obj.address: Address = address
+        obj.address: 'Address' = address
         obj.block_generate_count: int = data_list[0]
         obj.block_validate_count: int = data_list[1]
         return obj
@@ -251,8 +251,8 @@ class DelegationInfo(object):
     @staticmethod
     def decode(data: list) -> 'DelegationInfo':
         obj = DelegationInfo()
-        obj.address = data[0]
-        obj.value = data[1]
+        obj.address: 'Address' = data[0]
+        obj.value: int = data[1]
         return obj
 
 

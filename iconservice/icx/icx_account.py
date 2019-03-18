@@ -216,7 +216,7 @@ class Account(object):
                 flags = MsgPackConverter.decode(TypeTag.INT, data[2])
                 obj._locked = bool(flags & AccountFlag.LOCKED)
                 obj._balance = MsgPackConverter.decode(TypeTag.INT, data[3])
-                obj.iiss = AccountForIISS.decode(data[4:])
+                obj.iiss = AccountForIISS.decode(data[4])
                 return obj
             else:
                 raise InvalidParamsException(f"Invalid Account version: {version}")
@@ -236,8 +236,8 @@ class Account(object):
             data = [MsgPackConverter.encode(version),
                     MsgPackConverter.encode(self._type),
                     MsgPackConverter.encode(flags),
-                    MsgPackConverter.encode(self.balance)]
-            data += self.iiss.encode()
+                    MsgPackConverter.encode(self.balance),
+                    self.iiss.encode()]
 
             return MsgPackConverter.dumps(data)
         else:
