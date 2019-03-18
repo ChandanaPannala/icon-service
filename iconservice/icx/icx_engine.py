@@ -91,12 +91,12 @@ class IcxEngine(object):
         """
 
         account = Account(
-            account_type=account_type, address=address, icx=int(amount))
+            account_type=account_type, address=address, balance=int(amount))
 
         self._storage.put_account(context, account.address, account)
 
-        if account.icx > 0:
-            self._total_supply_amount += account.icx
+        if account.balance > 0:
+            self._total_supply_amount += account.balance
             self._storage.put_total_supply(context, self._total_supply_amount)
 
         if account_type == AccountType.GENESIS or \
@@ -187,7 +187,7 @@ class IcxEngine(object):
         amount = 0
 
         if account:
-            amount = account.icx
+            amount = account.balance
 
         return amount
 
