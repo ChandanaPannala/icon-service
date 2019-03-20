@@ -20,7 +20,7 @@ import unittest
 
 from iconservice.base.exception import InvalidParamsException
 from iconservice.icon_constant import REVISION_4, REVISION_3
-from iconservice.icx.icx_account import AccountType, Account, Delegations
+from iconservice.icx.icx_account import AccountType, Account, DelegationInfo
 from tests import create_address
 
 
@@ -112,11 +112,10 @@ class TestAccount(unittest.TestCase):
         account.iiss.stake = 10 ** 20
         account.iiss.delegated_amount = 100000
 
-        d = Delegations()
-        d.address = create_address()
-        d.value = 10 ** 30
-        account.iiss.delegations.append(d)
-        account.iiss.delegations.append(d)
+        info = DelegationInfo()
+        info.address = create_address()
+        info.value = 10 ** 30
+        account.iiss.delegations.append(info)
         account4 = Account.from_bytes(account.to_bytes(REVISION_4))
 
         self.assertEqual(account, account4)

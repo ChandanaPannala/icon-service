@@ -172,6 +172,11 @@ class Account(object):
 
         self._balance -= value
 
+    def set_balance(self, value: int) -> None:
+        if not isinstance(value, int) or value < 0:
+            raise InvalidParamsException('Failed to deposit:value is not int type or value < 0')
+        self._balance: int = value
+
     def __eq__(self, other) -> bool:
         """operator == overriding
 
@@ -278,11 +283,18 @@ class AccountForIISS(object):
 
         delegations: list = data[2]
         for i in range(0, len(delegations), 2):
-            d = Delegations()
-            d.address = MsgPackConverter.decode(TypeTag.ADDRESS, delegations[i])
-            d.value = MsgPackConverter.decode(TypeTag.INT, delegations[i + 1])
-            obj.delegations.append(d)
+            info = DelegationInfo()
+            info.address = MsgPackConverter.decode(TypeTag.ADDRESS, delegations[i])
+            info.value = MsgPackConverter.decode(TypeTag.INT, delegations[i + 1])
+            obj.delegations.append(info)
         return obj
+
+    @staticmethod
+    def create_delegation(address: 'Address', value: int) -> 'DelegationInfo':
+        d = DelegationInfo()
+        d.address: 'Address' = address
+        d.value: int = value
+        return d
 
     def __eq__(self, other) -> bool:
         """operator == overriding
@@ -303,7 +315,7 @@ class AccountForIISS(object):
         return not self.__eq__(other)
 
 
-class Delegations(object):
+class DelegationInfo(object):
     def __init__(self):
         self.address: 'Address' = None
         self.value: int = 0
@@ -313,7 +325,7 @@ class Delegations(object):
 
         :param other: (Delegations)
         """
-        return isinstance(other, Delegations) \
+        return isinstance(other, DelegationInfo) \
                and self.address == other.address \
                and self.value == other.value
 

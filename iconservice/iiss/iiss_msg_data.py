@@ -35,7 +35,21 @@ class IissTxType(IntEnum):
     INVALID = 99
 
 
-class IissHeader(object):
+class IissData(object):
+    @abstractmethod
+    def make_key(self) -> bytes:
+        pass
+
+    @abstractmethod
+    def make_value(self) -> bytes:
+        pass
+
+    @staticmethod
+    def get_value(**kwargs) -> 'IissData':
+        pass
+
+
+class IissHeader(IissData):
     _prefix = 'HD'
 
     def __init__(self):
@@ -54,7 +68,7 @@ class IissHeader(object):
         return IissDataConverter.dumps(data)
 
     @staticmethod
-    def get_value(data: bytes) -> 'IissHeader':
+    def get_value(**kwargs) -> 'IissHeader':
         data_list: list = IissDataConverter.loads(data)
         obj = IissHeader()
         obj.version: int = data_list[0]
@@ -62,7 +76,7 @@ class IissHeader(object):
         return obj
 
 
-class IissGovernanceVariable(object):
+class IissGovernanceVariable(IissData):
     _prefix = 'gv'
 
     def __init__(self):
@@ -88,7 +102,7 @@ class IissGovernanceVariable(object):
         return obj
 
 
-class PrepsData(object):
+class PrepsData(IissData):
     _prefix = 'prep'
 
     def __init__(self):
@@ -121,7 +135,7 @@ class PrepsData(object):
         return obj
 
 
-class IissTxData(object):
+class IissTxData(IissData):
     _prefix = 'TX'
 
     def __init__(self):

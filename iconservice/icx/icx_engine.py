@@ -41,10 +41,10 @@ class IcxEngine(object):
     def __init__(self) -> None:
         """Constructor
         """
-        self._storage: IcxStorage = None
+        self._storage: 'IcxStorage' = None
         self._total_supply_amount: int = 0
-        self._genesis_address: Address = None
-        self._fee_treasury_address: Address = None
+        self._genesis_address: 'Address' = None
+        self._fee_treasury_address: 'Address' = None
 
     def open(self, storage: 'IcxStorage') -> None:
         """Open engine
@@ -129,7 +129,7 @@ class IcxEngine(object):
 
     def _load_address_from_storage(self,
                                    context: Optional['IconScoreContext'],
-                                   storage: IcxStorage,
+                                   storage: 'IcxStorage',
                                    db_key: str) -> None:
         """Load address info from state db according to db_key
 
@@ -215,8 +215,8 @@ class IcxEngine(object):
 
     def transfer(self,
                  context: 'IconScoreContext',
-                 from_: Address,
-                 to: Address,
+                 from_: 'Address',
+                 to: 'Address',
                  amount: int) -> bool:
         if amount < 0:
             raise InvalidParamsException('Amount is less than zero')
@@ -225,8 +225,8 @@ class IcxEngine(object):
 
     def _transfer(self,
                   context: 'IconScoreContext',
-                  from_: Address,
-                  to: Address,
+                  from_: 'Address',
+                  to: 'Address',
                   amount: int) -> bool:
         """Transfer the amount of icx to the account indicated by _to address
 
@@ -252,7 +252,7 @@ class IcxEngine(object):
 
     def get_account(self,
                     context: 'IconScoreContext',
-                    address: Address) -> Account:
+                    address: 'Address') -> 'Account':
         """Returns the instance of Account indicated by address
 
         :param context:
@@ -260,3 +260,4 @@ class IcxEngine(object):
         :return: Account
         """
         return self._storage.get_account(context, address)
+

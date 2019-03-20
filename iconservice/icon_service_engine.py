@@ -135,6 +135,7 @@ class IconServiceEngine(ContextContainer):
         self._icon_score_deploy_engine.open(icon_score_deploy_storage)
 
         # TODO IISS DB Data Init
+        IissEngine.icx_storage: 'IcxStorage' = self._icx_storage
         self._iiss_engine = IissEngine()
         self._iiss_engine.open()
 
@@ -720,15 +721,21 @@ class IconServiceEngine(ContextContainer):
         :param params:
         :return:
         """
-        icon_score_address: Address = params['to']
-        data_type = params.get('dataType', None)
-        data = params.get('data', None)
 
-        context.step_counter.apply_step(StepType.CONTRACT_CALL, 1)
-        return IconScoreEngine.query(context,
-                                     icon_score_address,
-                                     data_type,
-                                     data)
+        # TODO Branch IISS Engine
+        if self._check_iiss_process(params):
+            data: dict = params['data']
+            return self._iiss_engine.query(context, data)
+        else:
+            icon_score_address: Address = params['to']
+            data_type = params.get('dataType', None)
+            data = params.get('data', None)
+
+            context.step_counter.apply_step(StepType.CONTRACT_CALL, 1)
+            return IconScoreEngine.query(context,
+                                         icon_score_address,
+                                         data_type,
+                                         data)
 
     def _handle_icx_send_transaction(self,
                                      context: 'IconScoreContext',
@@ -880,9 +887,12 @@ class IconServiceEngine(ContextContainer):
 
         to: Address = params['to']
         value: int = params['value']
+        data: dict = params['data']
+
+        assert to == ZERO_SCORE_ADDRESS, "Invalid to Address"
 
         if value > 0:
-            raise InvalidParamsException('invalid params: value')
+            raise InvalidParamsException(f'invalid params: value{value}')
 
         # Check if from account can charge a tx fee
         self._icon_pre_validator.execute_to_check_out_of_balance(
@@ -890,7 +900,7 @@ class IconServiceEngine(ContextContainer):
             params,
             step_price=context.step_counter.step_price)
 
-        self._iiss_engine.invoke(context, to, params)
+        self._iiss_engine.invoke(context, data, tx_result)
 
     def _transfer_coin(self,
                        context: 'IconScoreContext',

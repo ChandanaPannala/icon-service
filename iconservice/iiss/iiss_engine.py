@@ -16,13 +16,36 @@
 
 from typing import TYPE_CHECKING, Any
 
+from ..base.exception import InvalidParamsException
+from ..base.type_converter import TypeConverter
+from ..base.type_converter_templates import ParamType, ConstantKeys
+
+from ..iiss.iiss_data_storage import IissDataStorage
+from ..icx.icx_account import AccountForIISS
+
 if TYPE_CHECKING:
+    from ..iconscore.icon_score_result import TransactionResult
     from ..iconscore.icon_score_context import IconScoreContext
+    from ..base.address import Address
+    from ..icx.icx_storage import IcxStorage
+    from ..icx.icx_account import Account, DelegationInfo
+    from .iiss_msg_data import IissTxData, StakeTx, DelegationInfo, DelegationTx
 
 
 class IissEngine:
+    icx_storage: 'IcxStorage' = None
 
     def __init__(self):
+        self._invoke_handlers: dict = {
+            'setStake': self._handle_set_stake,
+            'setDelegation': self._handle_set_delegation
+        }
+
+        self._query_handler: dict = {
+            'getStake': self._handle_get_stake
+        }
+
+        self._iiss_data_storage: 'IissDataStorage' = None
 
         # iiss데이터db가 글로벌 정보는 임시로 저장
         # self._iiss_data_db = None # iiss_data_level_db_instance
@@ -32,31 +55,161 @@ class IissEngine:
         pass
 
     def open(self):
+        self._iiss_data_storage: 'IissDataStorage' = IissDataStorage()
+        self._iiss_data_storage.open()
+
         # self._init_prep_order_list() # -> 비동기? 동기? LC에서 기다리고 IISSEngine이 다 끝나면 Hello를 다시 보내줄 것인가?
         # self._connect_iiss_data_db()
         pass
 
     def close(self):
-        pass
+        self._iiss_data_storage.close()
 
     def invoke(self, context: 'IconScoreContext',
-               data_type: str,
-               data: dict) -> None:
-        # self._call(context, data_type, data)
-        pass
+               data: dict,
+               tx_result: 'TransactionResult') -> None:
+        method: str = data['method']
+        params: dict = data['params']
+
+        handler: callable = self._invoke_handlers[method]
+        handler(context, params, tx_result)
 
     def query(self, context: 'IconScoreContext',
-              data_type: str,
               data: dict) -> Any:
-        # ret = self._call(context, data_type, data)
-        return None
+        method: str = data['method']
+        params: dict = data['params']
+
+        handler: callable = self._query_handler[method]
+        ret = handler(context, params)
+        return ret
+
+    def _handle_set_stake(self,
+                          context: 'IconScoreContext',
+                          params: dict,
+                          tx_result: 'TransactionResult') -> None:
+        address: 'Address' = context.tx.origin
+        ret_params: dict = TypeConverter.convert(params, ParamType.IISS_SET_STAKE)
+        value: int = ret_params[ConstantKeys.VALUE]
+
+        self._put_stake_to_state_db(context, address, value)
+        self._put_stake_to_iiss_db(address, context.block.height, value)
+        # TODO tx_result make
+
+    def _put_stake_to_state_db(self,
+                               context: 'IconScoreContext',
+                               address: 'Address',
+                               value: int) -> bool:
+
+        if not isinstance(value, int) or value < 0:
+            raise InvalidParamsException('Failed to stake: value is not int type or value < 0')
+
+        account: 'Account' = self.icx_storage.get_account(context, address)
+        balance: int = account.balance
+        stake: int = account.iiss.stake
+        total: int = balance + stake
+
+        if total < value:
+            raise InvalidParamsException('Failed to stake: total < stake')
+
+        new_balance: int = total - value
+        new_stake: int = value
+
+        account.set_balance(new_balance)
+        account.iiss.stake = new_stake
+
+        self.icx_storage.put_account(context, account.address, account)
+        return True
+
+    def _put_stake_to_iiss_db(self,
+                              address: 'Address',
+                              block_height: int,
+                              value: int) -> bool:
+
+        stake_tx: 'StakeTx' = self._iiss_data_storage.create_tx_stake(value)
+        iiss_data: 'IissTxData' = self._iiss_data_storage.create_tx(address, block_height, stake_tx)
+        self._iiss_data_storage.put(iiss_data)
+        return True
+
+    def _handle_get_stake(self,
+                          context: 'IconScoreContext',
+                          params: dict) -> int:
+
+        ret_params: dict = TypeConverter.convert(params, ParamType.IISS_GET_STAKE)
+        address: 'Address' = ret_params[ConstantKeys.ADDRESS]
+        return self._get_stake(context, address)
+
+    def _get_stake(self,
+                   context: 'IconScoreContext',
+                   address: 'Address') -> int:
+        account: 'Account' = self.icx_storage.get_account(context, address)
+
+        stake: int = 0
+        if account:
+            stake: int = account.iiss.stake
+        return stake
+
+    def _handle_set_delegation(self,
+                               context: 'IconScoreContext',
+                               params: dict,
+                               tx_result: 'TransactionResult') -> None:
+        address: 'Address' = context.tx.origin
+        ret_params: dict = TypeConverter.convert(params, ParamType.IISS_SET_STAKE)
+        data: list = ret_params[ConstantKeys.DELEGATIONS]
+
+        self._put_delegation_to_state_db(context, address, data)
+        self._put_delegation_to_iiss_db(address, context.block.height, data)
+        # TODO tx_result make
+
+    def _put_delegation_to_state_db(self,
+                                    context: 'IconScoreContext',
+                                    address: 'Address',
+                                    delegations: list) -> bool:
+
+        if not isinstance(delegations, list):
+            raise InvalidParamsException('Failed to delegation: delegations is not list type')
+
+        account: 'Account' = self.icx_storage.get_account(context, address)
+        stake: int = account.iiss.stake
+
+        delegation_list: list = []
+        total_amoount: int = 0
+
+        for address, value in delegations:
+            delegation: 'DelegationInfo' = DelegationInfo()
+            delegation.address = address
+            delegation.value = value
+
+            delegation_list.append(delegation)
+
+            total_amoount += value
+
+        if stake < total_amoount:
+            raise InvalidParamsException('Failed to delegation: stake < total_delegations')
+
+        account.iiss.delegations = delegation_list
+        self.icx_storage.put_account(context, account.address, account)
+        return True
+
+    def _put_delegation_to_iiss_db(self,
+                                   address: 'Address',
+                                   block_height: int,
+                                   delegations: list) -> bool:
+
+        delegation_list: list = []
+
+        for address, value in delegations:
+            info: 'DelegationInfo' = self._iiss_data_storage.create_delegation_info(address, value)
+            delegation_list.append(info)
+
+        delegation_tx: 'DelegationTx' = self._iiss_data_storage.create_tx_delegation(delegation_list)
+        self._iiss_data_storage.create_tx(address, block_height, delegation_tx)
+        return True
 
     def commit(self):
-        # self._iiss_data_db.write_batch()
-        pass
+        self._iiss_data_storage.commit()
 
     def rollback(self):
-        # self._iiss_data_db.clear()
+        # self._iiss_data_storage.commit()
         pass
 
     # def _init_prep_order_list(self):
@@ -71,13 +224,6 @@ class IissEngine:
     #     # IPC 통신을 하기위한 초기설정
     #     pass
     #
-    # def _call(self,
-    #           context: 'IconScoreContext',
-    #           method: str,
-    #           params: dict) -> Any:
-    #     """Call invoke and query requests in jsonrpc format"""
-    #     # invoke, query에서 method별로 이곳에서 각각 실행
-    #     pass
     #
     # def _set_global_value_into_state_DB(self):
     #     # IISS에 필요한 DB데이터를 기록한다.
