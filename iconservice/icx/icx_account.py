@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from collections import OrderedDict
 from enum import IntEnum, unique
 from struct import Struct
 
@@ -172,10 +172,37 @@ class Account(object):
 
         self._balance -= value
 
-    def set_balance(self, value: int) -> None:
+    # Version 2
+    def stake(self, value: int) -> None:
         if not isinstance(value, int) or value < 0:
-            raise InvalidParamsException('Failed to deposit:value is not int type or value < 0')
-        self._balance: int = value
+            raise InvalidParamsException('Failed to stake:value is not int type or value < 0')
+
+        self.iiss.stake += value
+        self.withdraw(value)
+
+    def unstake(self, block_height: int, value: int) -> None:
+        if not isinstance(value, int) or value < 0:
+            raise InvalidParamsException('Failed to unstake:value is not int type or value < 0')
+
+        self.iiss.stake -= value
+        self.iiss.unstake += value
+        self.iiss.unstake_block_height: int = block_height
+
+    def delegation(self, target: 'Account', value: int) -> bool:
+        delegation: 'DelegationInfo' = self.iiss.delegations.get(target.address, None)
+
+        if delegation is None:
+            raise InvalidParamsException(f'Failed to delegation: has no {target.address} from {self.address}')
+        else:
+            prev_delegation: int = delegation.value
+            offset: int = value - prev_delegation
+
+            if offset != 0:
+                delegation.value += offset
+                target.iiss.delegated_amount += offset
+                return True
+            else:
+                return False
 
     def __eq__(self, other) -> bool:
         """operator == overriding
@@ -259,19 +286,23 @@ class Account(object):
 class AccountForIISS(object):
     def __init__(self):
         self.stake: int = 0
+        self.unstake: int = 0
+        self.unstake_block_height: int = 0
         self.delegated_amount: int = 0
-        self.delegations: list = []
+        self.delegations: OrderedDict = OrderedDict()
 
     def encode(self) -> list:
         data = [
             MsgPackConverter.encode(self.stake),
+            MsgPackConverter.encode(self.unstake),
+            MsgPackConverter.encode(self.unstake_block_height),
             MsgPackConverter.encode(self.delegated_amount)
         ]
 
         delegations = []
-        for x in self.delegations:
-            delegations.append(MsgPackConverter.encode(x.address))
-            delegations.append(MsgPackConverter.encode(x.value))
+        for info in self.delegations.values():
+            delegations.append(MsgPackConverter.encode(info.address))
+            delegations.append(MsgPackConverter.encode(info.value))
         data.append(delegations)
         return data
 
@@ -279,14 +310,16 @@ class AccountForIISS(object):
     def decode(data: list) -> 'AccountForIISS':
         obj = AccountForIISS()
         obj.stake: int = MsgPackConverter.decode(TypeTag.INT, data[0])
-        obj.delegated_amount: int = MsgPackConverter.decode(TypeTag.INT, data[1])
+        obj.unstake: int = MsgPackConverter.decode(TypeTag.INT, data[1])
+        obj.unstake_block_height: int = MsgPackConverter.decode(TypeTag.INT, data[2])
+        obj.delegated_amount: int = MsgPackConverter.decode(TypeTag.INT, data[3])
 
-        delegations: list = data[2]
+        delegations: list = data[4]
         for i in range(0, len(delegations), 2):
             info = DelegationInfo()
             info.address = MsgPackConverter.decode(TypeTag.ADDRESS, delegations[i])
             info.value = MsgPackConverter.decode(TypeTag.INT, delegations[i + 1])
-            obj.delegations.append(info)
+            obj.delegations[info.address] = info
         return obj
 
     @staticmethod

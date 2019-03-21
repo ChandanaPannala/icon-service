@@ -27,11 +27,10 @@ if TYPE_CHECKING:
 
 
 class IissTxType(IntEnum):
-    STAKE = 0
-    DELEGATION = 1
-    CLAIM = 2
-    PREP_REGISTER = 3
-    PREP_UNREGISTER = 4
+    DELEGATION = 0
+    CLAIM = 1
+    PREP_REGISTER = 2
+    PREP_UNREGISTER = 3
     INVALID = 99
 
 
@@ -68,7 +67,7 @@ class IissHeader(IissData):
         return IissDataConverter.dumps(data)
 
     @staticmethod
-    def get_value(**kwargs) -> 'IissHeader':
+    def get_value(data: bytes) -> 'IissHeader':
         data_list: list = IissDataConverter.loads(data)
         obj = IissHeader()
         obj.version: int = data_list[0]
@@ -188,9 +187,7 @@ class IissTxData(IissData):
 
     @staticmethod
     def _covert_tx_data(tx_type: 'IissTxType', data: tuple) -> Any:
-        if tx_type == IissTxType.STAKE:
-            return StakeTx.decode(data)
-        elif tx_type == IissTxType.DELEGATION:
+        if tx_type == IissTxType.DELEGATION:
             return DelegationTx.decode(data)
         elif tx_type == IissTxType.CLAIM:
             return ClaimTx.decode(data)
@@ -215,24 +212,6 @@ class IissTx(object, metaclass=ABCMeta):
     @abstractmethod
     def decode(data: list) -> Any:
         pass
-
-
-class StakeTx(IissTx):
-    def __init__(self):
-        # BigInt
-        self.stake: int = 0
-
-    def get_type(self) -> 'IissTxType':
-        return IissTxType.STAKE
-
-    def encode(self) -> tuple:
-        return IissDataConverter.encode_any(self.stake)
-
-    @staticmethod
-    def decode(data: tuple) -> 'StakeTx':
-        obj = StakeTx()
-        obj.stake: int = IissDataConverter.decode_any(data)
-        return obj
 
 
 class DelegationTx(IissTx):

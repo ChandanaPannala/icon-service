@@ -18,7 +18,7 @@ import plyvel
 import unittest
 from typing import TYPE_CHECKING
 
-from iconservice.iiss.iiss_msg_data import IissHeader, IissGovernanceVariable, PrepsData, IissTxData, IissTxType, StakeTx, \
+from iconservice.iiss.iiss_msg_data import IissHeader, IissGovernanceVariable, PrepsData, IissTxData, IissTxType, \
     DelegationTx, DelegationInfo, ClaimTx, PRepRegisterTx, PRepUnregisterTx
 from tests import create_address, rmtree
 
@@ -46,48 +46,40 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.iiss_prep.block_generate_count = 3
         self.iiss_prep.block_validate_count = 10
 
-        self.tx_stake: 'IissTxData' = IissTxData()
-        self.tx_stake.index: int = 0
-        self.tx_stake.address: 'Address' = create_address(data=b'addr2')
-        self.tx_stake.block_height: int = 10 ** 3
-        self.tx_stake.type: 'IissTxType' = IissTxType.STAKE
-        self.tx_stake.data: 'StakeTx' = StakeTx()
-        self.tx_stake.data.stake: int = 10 ** 18
-
         self.tx_delegate: 'IissTxData' = IissTxData()
         self.tx_delegate.index: int = 1
-        self.tx_delegate.address: 'Address' = create_address(data=b'addr3')
+        self.tx_delegate.address: 'Address' = create_address(data=b'addr2')
         self.tx_delegate.block_height: int = 10 ** 3
         self.tx_delegate.type: 'IissTxType' = IissTxType.DELEGATION
         self.tx_delegate.data: 'DelegationTx' = DelegationTx()
 
         delegate_info: 'DelegationInfo' = DelegationInfo()
-        delegate_info.address = create_address(data=b'addr4')
+        delegate_info.address = create_address(data=b'addr3')
         delegate_info.value = 10 ** 10
         self.tx_delegate.data.delegation_info.append(delegate_info)
 
         delegate_info: 'DelegationInfo' = DelegationInfo()
-        delegate_info.address = create_address(data=b'addr5')
+        delegate_info.address = create_address(data=b'addr4')
         delegate_info.value = 10 ** 20
         self.tx_delegate.data.delegation_info.append(delegate_info)
 
         self.tx_claim: 'IissTxData' = IissTxData()
         self.tx_claim.index: int = 2
-        self.tx_claim.address: 'Address' = create_address(data=b'addr6')
+        self.tx_claim.address: 'Address' = create_address(data=b'addr5')
         self.tx_claim.block_height: int = 10 ** 3
         self.tx_claim.type: 'IissTxType' = IissTxType.CLAIM
         self.tx_claim.data: 'ClaimTx' = ClaimTx()
 
         self.tx_prep_reg: 'IissTxData' = IissTxData()
         self.tx_prep_reg.index: int = 3
-        self.tx_prep_reg.address: 'Address' = create_address(data=b'addr7')
+        self.tx_prep_reg.address: 'Address' = create_address(data=b'addr6')
         self.tx_prep_reg.block_height: int = 10 ** 3
         self.tx_prep_reg.type: 'IissTxType' = IissTxType.PREP_REGISTER
         self.tx_prep_reg.data: 'PRepRegisterTx' = PRepRegisterTx()
 
         self.tx_prep_un_reg: 'IissTxData' = IissTxData()
         self.tx_prep_un_reg.index: int = 4
-        self.tx_prep_un_reg.address: 'Address' = create_address(data=b'addr8')
+        self.tx_prep_un_reg.address: 'Address' = create_address(data=b'addr7')
         self.tx_prep_un_reg.block_height: int = 10 ** 3
         self.tx_prep_un_reg.type: 'IissTxType' = IissTxType.PREP_UNREGISTER
         self.tx_prep_un_reg.data: 'PRepUnregisterTx' = PRepUnregisterTx()
@@ -120,17 +112,6 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
         self.assertEqual(self.iiss_prep.block_generate_count, ret_p.block_generate_count)
         self.assertEqual(self.iiss_prep.block_validate_count, ret_p.block_validate_count)
-
-    def test_iiss_tx_data_stake(self):
-        data: bytes = self.tx_stake.make_value()
-        ret_tx: 'IissTxData' = self.tx_stake.get_value(self.tx_stake.index, data)
-
-        self.assertEqual(self.tx_stake.index, ret_tx.index)
-        self.assertEqual(self.tx_stake.address, ret_tx.address)
-        self.assertEqual(self.tx_stake.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_stake.type, ret_tx.type)
-
-        self.assertEqual(self.tx_stake.data.stake, ret_tx.data.stake)
 
     def test_iiss_tx_data_delegate(self):
         data: bytes = self.tx_delegate.make_value()
@@ -211,27 +192,12 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
             print(f"value: {value}")
             print("")
 
-        key: bytes = self.tx_stake.make_key()
-        value: bytes = self.tx_stake.make_value()
-        self.db.put(key, value)
-
-        if self.debug:
-            print("===IISS_TX_DATA-1===")
-            print(f"index: {self.tx_stake.index}")
-            print(f"address: {self.tx_stake.address}")
-            print(f"block_height: {self.tx_stake.block_height}")
-            print(f"type: {self.tx_stake.type}")
-            print(f"stake: {self.tx_stake.data.encode()}")
-            print(f"key: {key}")
-            print(f"value: {value}")
-            print("")
-
         key: bytes = self.tx_delegate.make_key()
         value: bytes = self.tx_delegate.make_value()
         self.db.put(key, value)
 
         if self.debug:
-            print("===IISS_TX_DATA-2===")
+            print("===IISS_TX_DATA-1===")
             print(f"index: {self.tx_delegate.index}")
             print(f"address: {self.tx_delegate.address}")
             print(f"block_height: {self.tx_delegate.block_height}")
@@ -247,7 +213,7 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.db.put(key, value)
 
         if self.debug:
-            print("===IISS_TX_DATA-3===")
+            print("===IISS_TX_DATA-2===")
             print(f"index: {self.tx_claim.index}")
             print(f"address: {self.tx_claim.address}")
             print(f"block_height: {self.tx_claim.block_height}")
@@ -262,7 +228,7 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.db.put(key, value)
 
         if self.debug:
-            print("===IISS_TX_DATA-4===")
+            print("===IISS_TX_DATA-3===")
             print(f"index: {self.tx_prep_reg.index}")
             print(f"address: {self.tx_prep_reg.address}")
             print(f"block_height: {self.tx_prep_reg.block_height}")
@@ -277,7 +243,7 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.db.put(key, value)
 
         if self.debug:
-            print("===IISS_TX_DATA-5===")
+            print("===IISS_TX_DATA-4===")
             print(f"index: {self.tx_prep_un_reg.index}")
             print(f"address: {self.tx_prep_un_reg.address}")
             print(f"block_height: {self.tx_prep_un_reg.block_height}")
@@ -308,17 +274,6 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
 
         self.assertEqual(self.iiss_prep.block_generate_count, ret_p.block_generate_count)
         self.assertEqual(self.iiss_prep.block_validate_count, ret_p.block_validate_count)
-
-        key: bytes = self.tx_stake.make_key()
-        value = self.db.get(key)
-        ret_tx: 'IissTxData' = self.tx_stake.get_value(self.tx_stake.index, value)
-
-        self.assertEqual(self.tx_stake.index, ret_tx.index)
-        self.assertEqual(self.tx_stake.address, ret_tx.address)
-        self.assertEqual(self.tx_stake.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_stake.type, ret_tx.type)
-
-        self.assertEqual(self.tx_stake.data.stake, ret_tx.data.stake)
 
         key: bytes = self.tx_delegate.make_key()
         value = self.db.get(key)

@@ -21,7 +21,6 @@ from ..base.type_converter import TypeConverter
 from ..base.type_converter_templates import ParamType, ConstantKeys
 
 from ..iiss.iiss_data_storage import IissDataStorage
-from ..icx.icx_account import AccountForIISS
 
 if TYPE_CHECKING:
     from ..iconscore.icon_score_result import TransactionResult
@@ -42,7 +41,8 @@ class IissEngine:
         }
 
         self._query_handler: dict = {
-            'getStake': self._handle_get_stake
+            'getStake': self._handle_get_stake,
+            'getDelegation': self._handle_get_delegation
         }
 
         self._iiss_data_storage: 'IissDataStorage' = None
@@ -98,7 +98,7 @@ class IissEngine:
     def _put_stake_to_state_db(self,
                                context: 'IconScoreContext',
                                address: 'Address',
-                               value: int) -> bool:
+                               value: int) -> None:
 
         if not isinstance(value, int) or value < 0:
             raise InvalidParamsException('Failed to stake: value is not int type or value < 0')
@@ -111,24 +111,23 @@ class IissEngine:
         if total < value:
             raise InvalidParamsException('Failed to stake: total < stake')
 
-        new_balance: int = total - value
-        new_stake: int = value
-
-        account.set_balance(new_balance)
-        account.iiss.stake = new_stake
-
+        offset: int = value - stake
+        if offset > 0:
+            account.stake(abs(offset))
+        elif offset < 0:
+            account.unstake(abs(offset))
+        else:
+            return
         self.icx_storage.put_account(context, account.address, account)
-        return True
 
     def _put_stake_to_iiss_db(self,
                               address: 'Address',
                               block_height: int,
-                              value: int) -> bool:
+                              value: int) -> None:
 
         stake_tx: 'StakeTx' = self._iiss_data_storage.create_tx_stake(value)
         iiss_data: 'IissTxData' = self._iiss_data_storage.create_tx(address, block_height, stake_tx)
         self._iiss_data_storage.put(iiss_data)
-        return True
 
     def _handle_get_stake(self,
                           context: 'IconScoreContext',
@@ -152,6 +151,7 @@ class IissEngine:
                                context: 'IconScoreContext',
                                params: dict,
                                tx_result: 'TransactionResult') -> None:
+
         address: 'Address' = context.tx.origin
         ret_params: dict = TypeConverter.convert(params, ParamType.IISS_SET_STAKE)
         data: list = ret_params[ConstantKeys.DELEGATIONS]
@@ -162,32 +162,29 @@ class IissEngine:
 
     def _put_delegation_to_state_db(self,
                                     context: 'IconScoreContext',
-                                    address: 'Address',
+                                    from_address: 'Address',
                                     delegations: list) -> bool:
 
         if not isinstance(delegations, list):
             raise InvalidParamsException('Failed to delegation: delegations is not list type')
 
-        account: 'Account' = self.icx_storage.get_account(context, address)
-        stake: int = account.iiss.stake
+        from_account: 'Account' = self.icx_storage.get_account(context, from_address)
+        stake: int = from_account.iiss.stake
 
-        delegation_list: list = []
         total_amoount: int = 0
-
+        update_list: list = []
         for address, value in delegations:
-            delegation: 'DelegationInfo' = DelegationInfo()
-            delegation.address = address
-            delegation.value = value
-
-            delegation_list.append(delegation)
-
+            target_account: 'Account' = self.icx_storage.get_account(context, address)
+            if from_account.delegation(target_account, value):
+                update_list.append(target_account)
             total_amoount += value
 
         if stake < total_amoount:
             raise InvalidParamsException('Failed to delegation: stake < total_delegations')
 
-        account.iiss.delegations = delegation_list
-        self.icx_storage.put_account(context, account.address, account)
+        self.icx_storage.put_account(context, from_account.address, from_account)
+        for account in update_list:
+            self.icx_storage.put_account(context, account.address, account)
         return True
 
     def _put_delegation_to_iiss_db(self,
@@ -204,6 +201,20 @@ class IissEngine:
         delegation_tx: 'DelegationTx' = self._iiss_data_storage.create_tx_delegation(delegation_list)
         self._iiss_data_storage.create_tx(address, block_height, delegation_tx)
         return True
+
+    def _handle_get_delegation(self,
+                               context: 'IconScoreContext',
+                               params: dict) -> dict:
+
+        ret_params: dict = TypeConverter.convert(params, ParamType.IISS_GET_STAKE)
+        address: 'Address' = ret_params[ConstantKeys.ADDRESS]
+        return self._get_delegation(context, address)
+
+    def _get_delegation(self,
+                        context: 'IconScoreContext',
+                        address: 'Address') -> dict:
+        account: 'Account' = self.icx_storage.get_account(context, address)
+        return {}
 
     def commit(self):
         self._iiss_data_storage.commit()

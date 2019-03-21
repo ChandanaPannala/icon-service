@@ -95,7 +95,7 @@ class TestAccount(unittest.TestCase):
 
         data = account.to_bytes(REVISION_4)
         self.assertTrue(isinstance(data, bytes))
-        self.assertEqual(15, len(data))
+        self.assertEqual(19, len(data))
 
         account2 = Account.from_bytes(data)
         self.assertFalse(account2.locked)
@@ -110,12 +110,14 @@ class TestAccount(unittest.TestCase):
         self.assertEqual(1024, account3.balance)
 
         account.iiss.stake = 10 ** 20
+        account.iiss.unstake = 10 ** 10
+        account.iiss.unstake_block_height = 100
         account.iiss.delegated_amount = 100000
 
         info = DelegationInfo()
         info.address = create_address()
         info.value = 10 ** 30
-        account.iiss.delegations.append(info)
+        account.iiss.delegations[info.address] = info
         account4 = Account.from_bytes(account.to_bytes(REVISION_4))
 
         self.assertEqual(account, account4)

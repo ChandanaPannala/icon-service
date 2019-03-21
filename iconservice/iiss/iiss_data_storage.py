@@ -17,7 +17,7 @@
 from typing import TYPE_CHECKING
 
 from .iiss_msg_data import IissHeader, IissGovernanceVariable, PrepsData, IissTxData, \
-    StakeTx, DelegationTx, DelegationInfo, ClaimTx, PRepRegisterTx, PRepUnregisterTx
+    DelegationTx, DelegationInfo, ClaimTx, PRepRegisterTx, PRepUnregisterTx
 
 if TYPE_CHECKING:
     from ..base.address import Address
