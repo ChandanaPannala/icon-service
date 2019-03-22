@@ -11,6 +11,7 @@
 # limitations under the License.
 
 import os
+from shutil import rmtree
 from typing import TYPE_CHECKING
 
 from .database.iiss_db import IissDatabase
@@ -20,24 +21,29 @@ from .iiss_msg_data import IissHeader, IissGovernanceVariable, PrepsData, IissTx
 if TYPE_CHECKING:
     from ..base.address import Address
     from .iiss_msg_data import IissData, IissTx
+    from .database.iiss_db import IissDatabase
 
 
 class IissDataStorage(object):
-    _CURRENT_IISS_DB_NAME = "current"
-    _PREVIOUS_IISS_DB_NAME = "previous"
+    _CURRENT_IISS_DB_NAME = "current_db"
+    # todo: rename class variable
+    _IISS_RC_DB_NAME_WITHOUT_BLOCK_HEIGHT = "iiss_rc_db_"
 
     def __init__(self) -> None:
         """Constructor
 
         :param db: (Database) IISS db wrapper
         """
-        # TODO IISS DB 저장클래스 만들기
-        self._db = None
+        self._current_db_path: str = ""
+        self._iiss_rc_db_path: str = ""
+        self._db: 'IissDatabase' = None
 
     def open(self, path) -> None:
-        # todo: path에 대해서 놓친 부분 없는 지 체크하기
-        db_path = os.path.join(path, self._CURRENT_IISS_DB_NAME)
-        self._db = IissDatabase.from_path(db_path, create_if_missing=True)
+        self._current_db_path = os.path.join(path, self._CURRENT_IISS_DB_NAME)
+        self._iiss_rc_db_path = os.path.join(self._current_db_path,
+                                             "../" + self._IISS_RC_DB_NAME_WITHOUT_BLOCK_HEIGHT)
+        self._db = IissDatabase.from_path(self._current_db_path,
+                                          create_if_missing=True)
 
     def close(self) -> None:
         """Close the embedded database.
@@ -46,40 +52,44 @@ class IissDataStorage(object):
             self._db = None
 
     def put(self, batch: dict, iiss_data: 'IissData') -> None:
-        # iiss data, batch data에 대한 check logic
+        # todo: iiss data, batch data check logic
 
         key: bytes = iiss_data.make_key()
         value: bytes = iiss_data.make_value()
         batch.update({key: value})
 
     def commit(self, batch: dict) -> None:
-        # batch data에 대한 check logic
-
+        # todo: batch data check logic
         self._db.write_batch(batch)
 
-        # batch에서 마지막 index를 따로 db에 기록
-
     def load_last_transaction_index(self) -> int:
-        # if there is no data on db, return 0
         tx_sub_db: 'IissDatabase' = self._db.get_sub_db(IissData._prefix)
 
-        last_tx_key, _ = next(tx_sub_db.iterator(reverse=True))
-        return int.from_bytes(last_tx_key[2:], "big")
+        last_tx_key, _ = next(tx_sub_db.iterator(reverse=True), (None, None))
+        # if there is no tx data, return -1 (as iiss engine increase tx index automatically).
+        return int.from_bytes(last_tx_key[2:], "big") if last_tx_key is not None else -1
 
-    def create_db_for_calc(self) -> str:
-        # todo: db 생성 전에 고려해야할 부분 정리하기
-        # db close
+    def create_db_for_calc(self, block_height: int) -> str:
+        # todo: checklist about before creating db
+        self._db.close()
 
-        # cp and rename current db
+        iiss_rc_db_path = self._iiss_rc_db_path + str(block_height)
+        if os.path.exists(self._current_db_path) and not os.path.exists(iiss_rc_db_path):
+            os.rename(self._current_db_path, iiss_rc_db_path)
+        else:
+            # todo: consider which exception should be raised
+            raise Exception
 
-        # clear all data of current db
+        self._db.reset_db(self._current_db_path)
+        return iiss_rc_db_path
 
-        # return db path
-        pass
-
-    def remove_db_for_calc(self) -> None:
-        #
-        pass
+    def remove_db_for_calc(self, block_height: int) -> None:
+        iiss_rc_db_path = self._iiss_rc_db_path + str(block_height)
+        if os.path.exists(iiss_rc_db_path):
+            rmtree(iiss_rc_db_path, ignore_errors=True)
+        else:
+            # todo: consider which exception should be raised
+            raise Exception
 
     # Utils
     @staticmethod
