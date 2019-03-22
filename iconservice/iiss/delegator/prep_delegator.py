@@ -14,11 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import plyvel
+from ...icx.icx_storage import IcxStorage
+from ..database.iiss_batch import IissBatchManager
+from ..iiss_data_storage import IissDataStorage
+from ..reward_calc_proxy import RewardCalcProxy
 
-from iconservice.database.db import KeyValueDatabase
 
-
-class IissDatabase(KeyValueDatabase):
-    def __init__(self, db: plyvel.DB) -> None:
-        super().__init__(db)
+class PrepDelegator:
+    icx_storage: 'IcxStorage' = None
+    batch_manager: 'IissBatchManager' = None
+    data_storage: 'IissDataStorage' = None
+    reward_calc_proxy: 'RewardCalcProxy' = None
+    global_variable: 'IissGlobalVariable' = None

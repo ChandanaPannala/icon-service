@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 
 class RewardCalcProxy(object):
-    def __init__(self, loop: asyncio.events):
-        self._loop = loop
+    def __init__(self):
+        self._loop = None
 
     def calculate(self, iiss_db_path: str, block_height: int):
         """Request RewardCalculator to calculate IScore for every account

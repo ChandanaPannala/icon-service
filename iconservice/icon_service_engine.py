@@ -78,7 +78,7 @@ class IconServiceEngine(ContextContainer):
         self._icon_score_deploy_engine = None
         self._step_counter_factory = None
         self._icon_pre_validator = None
-        self._iiss_engine = None
+        self._iiss_engine: 'IissEngine' = None
 
         # JSON-RPC handlers
         self._handlers = {
@@ -102,11 +102,15 @@ class IconServiceEngine(ContextContainer):
         self._conf = conf
         service_config_flag = self._make_service_flag(self._conf[ConfigKey.SERVICE])
         score_root_path: str = self._conf[ConfigKey.SCORE_ROOT_PATH].rstrip('/')
-        score_root_path = os.path.abspath(score_root_path)
+        score_root_path: str = os.path.abspath(score_root_path)
         state_db_root_path: str = self._conf[ConfigKey.STATE_DB_ROOT_PATH].rstrip('/')
+        iiss_db_root_path: str = self._conf[ConfigKey.IISS_DB_ROOT_PATH].rstrip('/')
+        iiss_db_root_path: str = os.path.abspath(iiss_db_root_path)
+        conf[ConfigKey.IISS_DB_ROOT_PATH] = iiss_db_root_path
 
         os.makedirs(score_root_path, exist_ok=True)
         os.makedirs(state_db_root_path, exist_ok=True)
+        os.makedirs(iiss_db_root_path, exist_ok=True)
 
         # Share one context db with all SCOREs
         ContextDatabaseFactory.open(
@@ -137,7 +141,7 @@ class IconServiceEngine(ContextContainer):
         # TODO IISS DB Data Init
         IissEngine.icx_storage: 'IcxStorage' = self._icx_storage
         self._iiss_engine = IissEngine()
-        self._iiss_engine.open()
+        self._iiss_engine.open(conf)
 
         self._load_builtin_scores()
         self._init_global_value_by_governance_score()
@@ -637,6 +641,7 @@ class IconServiceEngine(ContextContainer):
         to: 'Address' = params.get('to')
 
         context = IconScoreContext(IconScoreContextType.QUERY)
+        context.block = self._icx_storage.last_block
         context.step_counter = self._step_counter_factory.create(IconScoreContextType.QUERY)
         self._set_revision_to_context(context)
 
@@ -823,7 +828,8 @@ class IconServiceEngine(ContextContainer):
         else:
             self._process_icx_transaction(context, params, tx_result)
 
-    def _check_iiss_process(self, params: dict) -> bool:
+    @staticmethod
+    def _check_iiss_process(params: dict) -> bool:
         to: Optional['Address'] = params.get('to')
         if to != ZERO_SCORE_ADDRESS:
             return False
@@ -1157,6 +1163,8 @@ class IconServiceEngine(ContextContainer):
         if precommit_data.precommit_flag & PrecommitFlag.STEP_ALL_CHANGED != PrecommitFlag.NONE:
             self._init_global_value_by_governance_score()
 
+        self._iiss_engine.commit(block.hash)
+
     def rollback(self, block: 'Block') -> None:
         """Throw away a precommit state
         in context.block_batch and IconScoreEngine
@@ -1164,3 +1172,5 @@ class IconServiceEngine(ContextContainer):
         # Check for block validation before rollback
         self._precommit_data_manager.validate_precommit_block(block)
         self._precommit_data_manager.rollback(block)
+
+        self._iiss_engine.rollback(block.hash)

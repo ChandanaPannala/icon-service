@@ -14,11 +14,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import plyvel
-
-from iconservice.database.db import KeyValueDatabase
-
-
-class IissDatabase(KeyValueDatabase):
-    def __init__(self, db: plyvel.DB) -> None:
-        super().__init__(db)

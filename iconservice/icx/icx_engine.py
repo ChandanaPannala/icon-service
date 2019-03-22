@@ -172,7 +172,7 @@ class IcxEngine(object):
         Logger.debug('_load_total_supply_amount() end', ICX_LOG_TAG)
 
     def get_balance(self,
-                    context: Optional['IconScoreContext'],
+                    context: 'IconScoreContext',
                     address: Address) -> int:
         """Get the balance of address
 
@@ -187,7 +187,10 @@ class IcxEngine(object):
         amount = 0
 
         if account:
-            amount = account.balance
+            block_height: int = 0
+            if context:
+                block_height = context.block.height
+            amount = account.balance + account.extension_balance(block_height)
 
         return amount
 

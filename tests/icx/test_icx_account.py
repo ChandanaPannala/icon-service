@@ -136,6 +136,60 @@ class TestAccount(unittest.TestCase):
         account2 = Account.from_bytes(data)
         self.assertEqual(account, account2)
 
+    def test_account_for_stake(self):
+        account = Account()
+
+        balance = 1000
+        account.type = AccountType.GENERAL
+        account.deposit(balance)
+
+        stake = 500
+        unstake = 0
+        unstake_block_height = 0
+        remain_balance = balance - stake
+        account.stake(stake)
+
+        self.assertEqual(stake, account.iiss.stake)
+        self.assertEqual(unstake, account.iiss.unstake)
+        self.assertEqual(unstake_block_height, account.iiss.unstake_block_height)
+        self.assertEqual(remain_balance, account.balance)
+
+        unstake = 100
+        block_height = 10
+        remain_stake = stake - unstake
+        remain_balance = balance - stake
+        account.unstake(block_height, unstake)
+
+        self.assertEqual(remain_stake, account.iiss.stake)
+        self.assertEqual(unstake, account.iiss.unstake)
+        self.assertEqual(block_height, account.iiss.unstake_block_height)
+        self.assertEqual(remain_balance, account.balance)
+
+        self.assertEqual(0, account.extension_balance(block_height))
+        self.assertEqual(unstake, account.extension_balance(block_height + 1))
+
+    def test_account_for_delegation(self):
+
+        account_list = []
+
+        for _ in range(0, 20):
+            account = Account()
+            account.address = create_address()
+            account_list.append(account)
+            account.deposit(1000)
+
+        account = account_list[0]
+        account.stake(1000)
+
+        for i in range(0, 10):
+            account.delegation(account_list[i], 10)
+            self.assertEqual(10, account.iiss.delegated_amount)
+
+        self.assertEqual(10, len(account.iiss.delegations))
+
+        account.delegation(account_list[0], 0)
+        self.assertEqual(9, len(account.iiss.delegations))
+
 
 if __name__ == '__main__':
     unittest.main()

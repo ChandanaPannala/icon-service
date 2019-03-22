@@ -62,9 +62,11 @@ class TestIconServiceEngine(unittest.TestCase):
     def setUp(self):
         self._state_db_root_path = '.db'
         self._score_root_path = '.score'
+        self._iiss_db_path = '.iissdb'
 
         rmtree(self._score_root_path)
         rmtree(self._state_db_root_path)
+        rmtree(self._iiss_db_path)
 
         engine = IconServiceEngine()
         conf = IconConfig("", default_icon_config)
@@ -119,6 +121,7 @@ class TestIconServiceEngine(unittest.TestCase):
 
         rmtree(self._score_root_path)
         rmtree(self._state_db_root_path)
+        rmtree(self._iiss_db_path)
 
     def test_make_flag(self):
         table = {ConfigKey.SERVICE_FEE: True,
@@ -138,7 +141,7 @@ class TestIconServiceEngine(unittest.TestCase):
 
     def test_call_on_query(self):
         context = IconScoreContext(IconScoreContextType.QUERY)
-
+        context.block = Block(1, create_block_hash(), 0, None)
         method = 'icx_getBalance'
         params = {'address': self.from_}
 

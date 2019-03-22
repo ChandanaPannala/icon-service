@@ -75,6 +75,11 @@ class ConfigKey:
     AMQP_TARGET = 'amqpTarget'
     CONFIG = 'config'
     TBEARS_MODE = 'tbearsMode'
+    IISS_DB_ROOT_PATH = "iissDbRootPath"
+    IISS_GOVERNANCE_VARIABLE = "iissGovernanceVariable",
+    IISS_UNSTAKE_LOCK_PERIOD = "iissUnstakeLockPeriod",
+    IISS_PREP_LIST = "iissPrepList",
+    IISS_CALCULATE_PERIOD = "iissCalculatePeriod"
 
 
 class EnableThreadFlag(IntFlag):
@@ -128,3 +133,5 @@ IISS_METHOD_TABLE = [
     "getPRepList",
     "getPRepCandidateList"
 ]
+
+IISS_MAX_DELEGATION_LIST = 10

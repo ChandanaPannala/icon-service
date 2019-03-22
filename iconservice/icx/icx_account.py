@@ -19,7 +19,7 @@ from struct import Struct
 
 from ..base.msgpack_util import MsgPackConverter, TypeTag
 from ..base.exception import InvalidParamsException
-from ..icon_constant import DEFAULT_BYTE_SIZE, DATA_BYTE_ORDER, REVISION_4
+from ..icon_constant import DEFAULT_BYTE_SIZE, DATA_BYTE_ORDER, REVISION_4, IISS_MAX_DELEGATION_LIST
 
 from typing import TYPE_CHECKING
 
@@ -180,29 +180,41 @@ class Account(object):
         self.iiss.stake += value
         self.withdraw(value)
 
-    def unstake(self, block_height: int, value: int) -> None:
+    def unstake(self, next_block_height: int, value: int) -> None:
         if not isinstance(value, int) or value < 0:
             raise InvalidParamsException('Failed to unstake:value is not int type or value < 0')
 
         self.iiss.stake -= value
         self.iiss.unstake += value
-        self.iiss.unstake_block_height: int = block_height
+        self.iiss.unstake_block_height: int = next_block_height
 
     def delegation(self, target: 'Account', value: int) -> bool:
         delegation: 'DelegationInfo' = self.iiss.delegations.get(target.address, None)
 
         if delegation is None:
-            raise InvalidParamsException(f'Failed to delegation: has no {target.address} from {self.address}')
+            delegation: 'DelegationInfo' = AccountForIISS.create_delegation(target.address, value)
+            self.iiss.delegations[target.address] = delegation
+            target.iiss.delegated_amount += value
+            return True
         else:
             prev_delegation: int = delegation.value
             offset: int = value - prev_delegation
 
             if offset != 0:
                 delegation.value += offset
-                target.iiss.delegated_amount += offset
+                self.iiss.delegated_amount += offset
+
+                if delegation.value == 0:
+                    del self.iiss.delegations[target.address]
                 return True
             else:
                 return False
+
+    def extension_balance(self, current_block_height: int) -> int:
+        if current_block_height > self.iiss.unstake_block_height:
+            return self.iiss.unstake
+        else:
+            return 0
 
     def __eq__(self, other) -> bool:
         """operator == overriding
@@ -368,3 +380,9 @@ class DelegationInfo(object):
         :param other: (Delegations)
         """
         return not self.__eq__(other)
+
+    def to_dict(self):
+        return {
+            "address": self.address,
+            "value": self.value
+        }
