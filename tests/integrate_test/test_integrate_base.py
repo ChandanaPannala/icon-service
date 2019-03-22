@@ -39,6 +39,7 @@ class TestIntegrateBase(TestCase):
     def setUpClass(cls):
         cls._score_root_path = '.score'
         cls._state_db_root_path = '.statedb'
+        cls._iiss_db_root_path = '.iissdb'
         cls._test_sample_root = "test_samples"
         cls._signature = "VAia7YZ2Ji6igKWzjR2YsGa2m53nKPrfK7uXYW78QLE+ATehAVZPC40szvAiA6NEU5gCYB4c4qaQzqDh2ugcHgA="
 
@@ -53,7 +54,7 @@ class TestIntegrateBase(TestCase):
         cls._addr_array = [create_address() for _ in range(10)]
 
     def setUp(self):
-        root_clear(self._score_root_path, self._state_db_root_path)
+        root_clear(self._score_root_path, self._state_db_root_path, self._iiss_db_root_path)
 
         self._block_height = 0
         self._prev_block_hash = None
@@ -76,7 +77,7 @@ class TestIntegrateBase(TestCase):
 
     def tearDown(self):
         self.icon_service_engine.close()
-        root_clear(self._score_root_path, self._state_db_root_path)
+        root_clear(self._score_root_path, self._state_db_root_path, self._iiss_db_root_path)
 
     def _make_init_config(self) -> dict:
         return {}

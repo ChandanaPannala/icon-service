@@ -21,6 +21,8 @@ import unittest
 from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
+from iconservice.base.block import Block
+
 from iconservice.icx.icx_account import Account
 from iconservice.base.address import Address, MalformedAddress
 from iconservice.database.db import ContextDatabase
@@ -29,6 +31,7 @@ from iconservice.iconscore.icon_score_context import IconScoreContextType
 from iconservice.icx.icx_account import AccountType
 from iconservice.icx.icx_engine import IcxEngine
 from iconservice.icx.icx_storage import IcxStorage
+from tests import create_block_hash
 
 if TYPE_CHECKING:
     from iconservice.iconscore.icon_score_context import IconScoreContext
@@ -49,6 +52,7 @@ class TestIcxEngine(unittest.TestCase, ContextContainer):
         self.total_supply = 10 ** 20  # 100 icx
 
         self.context = IconScoreContext(IconScoreContextType.DIRECT)
+        self.context.block = Block(1, create_block_hash(), 0, None)
 
         icx_storage = IcxStorage(db)
         self.engine.open(icx_storage)
@@ -224,6 +228,7 @@ class TestIcxEngineForMalformedAddress(unittest.TestCase, ContextContainer):
         self.total_supply = 10 ** 20  # 100 icx
 
         self.context = IconScoreContext(IconScoreContextType.DIRECT)
+        self.context.block = Block(1, create_block_hash(), 0, None)
 
         icx_storage = IcxStorage(db)
         self.engine.open(icx_storage)
