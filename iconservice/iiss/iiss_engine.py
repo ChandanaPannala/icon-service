@@ -72,9 +72,10 @@ class IissEngine:
 
     def open(self, conf: 'IconConfig'):
         self._reward_calc_proxy = RewardCalcProxy()
-        self._batch_manager = IissBatchManager()
+
         self._data_storage: 'IissDataStorage' = IissDataStorage()
         self._data_storage.open(conf[ConfigKey.IISS_DB_ROOT_PATH])
+        self._batch_manager = IissBatchManager(self._data_storage.load_last_transaction_index())
 
         self._global_variable: 'IissGlobalVariable' = IissGlobalVariable()
         self._global_variable.gv = conf[ConfigKey.IISS_GOVERNANCE_VARIABLE]
@@ -111,7 +112,7 @@ class IissEngine:
     def commit(self, block_hash: bytes):
         batch: 'IissBatch' = self._batch_manager.get_batch(block_hash)
         self._data_storage.commit(batch)
-
+        self._batch_manager.update_index_and_clear(block_hash)
         # TODO 정산주기에 맞춰 RC에 계산하라고 전달
 
     def rollback(self, block_hash: bytes):

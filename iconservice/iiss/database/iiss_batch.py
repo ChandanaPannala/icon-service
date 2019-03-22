@@ -15,24 +15,37 @@
 # limitations under the License.
 
 from collections import OrderedDict
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from . import IissBatch
 
 
+# todo: Ordered dict is not used
 class IissBatch(OrderedDict):
-    def __init__(self):
+    def __init__(self, tx_index: int):
         super().__init__()
+        # index for IissTxData's key
+        self._tx_index = tx_index
+
+    @property
+    def tx_index(self):
+        return self._tx_index
+
+    def increase_tx_index(self):
+        self._tx_index += 1
 
 
 class IissBatchManager(object):
-
-    def __init__(self):
-        self._iiss_batch_mapper = []
+    def __init__(self, recorded_last_transaction_index: int):
+        # last transaction index in current db
+        self._recorded_last_transaction_index = recorded_last_transaction_index
+        self._iiss_batch_mapper = {}
 
     def get_batch(self, block_hash: bytes) -> 'IissBatch':
-        return IissBatch()
+        if block_hash in self._iiss_batch_mapper.keys():
+            return self._iiss_batch_mapper[block_hash]
+        else:
+            return IissBatch(self._recorded_last_transaction_index)
 
-    def clear(self) -> None:
-        pass
+    # todo: rename method
+    def update_index_and_clear(self, block_hash) -> None:
+        committed_batch: 'IissBatch' = self._iiss_batch_mapper[block_hash]
+        self._recorded_last_transaction_index = committed_batch.tx_index
+        self._iiss_batch_mapper.clear()
