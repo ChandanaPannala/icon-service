@@ -79,6 +79,7 @@ class IissGovernanceVariable(IissData):
     _prefix = 'gv'
 
     def __init__(self):
+        self.block_height: int = 0
         self.icx_price: int = 0
         self.incentive_rep: int = 0
 
@@ -87,6 +88,7 @@ class IissGovernanceVariable(IissData):
 
     def make_value(self) -> bytes:
         data = [
+            self.block_height,
             self.icx_price,
             self.incentive_rep
         ]
@@ -96,8 +98,9 @@ class IissGovernanceVariable(IissData):
     def get_value(data: bytes) -> 'IissGovernanceVariable':
         data_list: list = IissDataConverter.loads(data)
         obj = IissGovernanceVariable()
-        obj.icx_price: int = data_list[0]
-        obj.incentive_rep: int = data_list[1]
+        obj.block_height: int = data_list[0]
+        obj.icx_price: int = data_list[1]
+        obj.incentive_rep: int = data_list[2]
         return obj
 
 
