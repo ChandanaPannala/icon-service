@@ -25,5 +25,5 @@ class IissDatabase(KeyValueDatabase):
 
     # todo: consider more good method name
     def reset_db(self, path, create_if_missing=True):
-        self._db = plyvel.DB(path, create_if_missing=create_if_missing)
+        self._db: 'KeyValueDatabase' = self.from_path(path, create_if_missing=create_if_missing)
 

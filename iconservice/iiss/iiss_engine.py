@@ -114,6 +114,8 @@ class IissEngine:
         self._data_storage.commit(batch)
         self._batch_manager.update_index_and_clear(block_hash)
         # TODO 정산주기에 맞춰 RC에 계산하라고 전달
+        # todo: if calc time, should input is_calc = True
+
 
     def rollback(self, block_hash: bytes):
         pass

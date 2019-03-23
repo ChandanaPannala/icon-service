@@ -55,8 +55,8 @@ class IissDataStorage(object):
 
     def put(self, batch: 'IissBatch', iiss_data: 'IissData') -> None:
         if isinstance(iiss_data, IissTxData):
+            iiss_data.index = batch.batch_transaction_index
             batch.increase_tx_index()
-            iiss_data.index = IissBatch.tx_index
 
         key: bytes = iiss_data.make_key()
         value: bytes = iiss_data.make_value()
@@ -68,10 +68,10 @@ class IissDataStorage(object):
 
     def load_last_transaction_index(self) -> int:
         # todo: need to refactor
-        tx_sub_db: 'IissDatabase' = self._db.get_sub_db(IissData._prefix)
+        tx_sub_db: 'IissDatabase' = self._db.get_sub_db(IissTxData._prefix)
         last_tx_key, _ = next(tx_sub_db.iterator(reverse=True), (None, None))
         # if there is no tx data, return -1 (as iiss engine increase tx index automatically).
-        return int.from_bytes(last_tx_key[2:], "big") if last_tx_key is not None else -1
+        return int.from_bytes(last_tx_key[2:], "big") + 1 if last_tx_key is not None else -1
 
     def create_db_for_calc(self, block_height: int) -> str:
         # todo: checklist about before creating db
@@ -94,5 +94,3 @@ class IissDataStorage(object):
         else:
             # todo: consider which exception should be raised
             raise Exception
-
-
