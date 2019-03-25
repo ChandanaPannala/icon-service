@@ -56,7 +56,7 @@ class IissDataStorage(object):
     def put(self, batch: 'IissBatch', iiss_data: 'IissData') -> None:
         if isinstance(iiss_data, IissTxData):
             iiss_data.index = batch.batch_transaction_index
-            batch.increase_tx_index()
+            batch.increase_transaction_index()
 
         key: bytes = iiss_data.make_key()
         value: bytes = iiss_data.make_value()

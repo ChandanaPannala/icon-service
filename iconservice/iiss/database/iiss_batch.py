@@ -28,7 +28,7 @@ class IissBatch(OrderedDict):
     def batch_transaction_index(self):
         return self._batch_transaction_index
 
-    def increase_tx_index(self):
+    def increase_transaction_index(self):
         self._batch_transaction_index += 1
 
 
@@ -45,10 +45,10 @@ class IissBatchManager(object):
             return IissBatch(self._db_transaction_index)
 
     # todo: rename method
-    def update_index_and_clear(self, block_hash, is_calc=False) -> None:
-        if is_calc:
-            self._db_transaction_index = 0
-        else:
-            self._db_transaction_index = self._iiss_batch_mapper[block_hash].batch_transaction_index
+    def update_index_and_clear_mapper(self, block_hash) -> None:
+        self._db_transaction_index = self._iiss_batch_mapper[block_hash].batch_transaction_index
 
         self._iiss_batch_mapper.clear()
+
+    def update_index_to_zero(self):
+        self._db_transaction_index = 0
