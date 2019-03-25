@@ -33,18 +33,19 @@ class IissDataCreator:
         return data
 
     @staticmethod
-    def create_gv_variable(icx_price: int, incentive_rep: int) -> 'IissGovernanceVariable':
+    def create_gv_variable(block_height: int, icx_price: int, incentive_rep: int) -> 'IissGovernanceVariable':
         data = IissGovernanceVariable()
+        data.block_height: int = block_height
         data.icx_price: int = icx_price
         data.incentive_rep: int = incentive_rep
         return data
 
     @staticmethod
-    def create_prep_data(address: 'Address', block_generate_count: int, block_validate_count: int) -> 'PrepsData':
+    def create_prep_data(block_height: int, block_generator: 'Address', block_validator_list: list) -> 'PrepsData':
         data = PrepsData()
-        data.address: 'Address' = address
-        data.block_generate_count: int = block_generate_count
-        data.block_validate_count: int = block_validate_count
+        data.block_height: int = block_height
+        data.block_generator: 'Address' = block_generator
+        data.block_validator_list: list = block_validator_list
         return data
 
     @staticmethod

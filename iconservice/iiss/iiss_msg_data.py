@@ -79,28 +79,32 @@ class IissGovernanceVariable(IissData):
     _prefix = 'gv'
 
     def __init__(self):
+        # key
         self.block_height: int = 0
+
+        # value
         self.icx_price: int = 0
         self.incentive_rep: int = 0
 
     def make_key(self) -> bytes:
-        return IissDataConverter.encode(self._prefix)
+        prefix: bytes = IissDataConverter.encode(self._prefix)
+        block_height: bytes = self.block_height.to_bytes(8, byteorder=DATA_BYTE_ORDER)
+        return prefix + block_height
 
     def make_value(self) -> bytes:
         data = [
-            self.block_height,
             self.icx_price,
             self.incentive_rep
         ]
         return IissDataConverter.dumps(data)
 
     @staticmethod
-    def get_value(data: bytes) -> 'IissGovernanceVariable':
+    def get_value(key: bytes, data: bytes) -> 'IissGovernanceVariable':
         data_list: list = IissDataConverter.loads(data)
         obj = IissGovernanceVariable()
-        obj.block_height: int = data_list[0]
-        obj.icx_price: int = data_list[1]
-        obj.incentive_rep: int = data_list[2]
+        obj.block_height: int = int.from_bytes(key[2:], DATA_BYTE_ORDER)
+        obj.icx_price: int = data_list[0]
+        obj.incentive_rep: int = data_list[1]
         return obj
 
 
@@ -109,31 +113,35 @@ class PrepsData(IissData):
 
     def __init__(self):
         # key
-        self.address: 'Address' = None
+        self.block_height: int = 0
 
         # value
-        self.block_generate_count: int = 0
-        self.block_validate_count: int = 0
+        self.block_generator: 'Address' = None
+        # todo: need to change type check
+        self.block_validator_list: list = None
 
     def make_key(self) -> bytes:
         prefix: bytes = IissDataConverter.encode(self._prefix)
-        address: bytes = IissDataConverter.encode(self.address)
-        return prefix + address
+        block_height: bytes = self.block_height.to_bytes(8, byteorder=DATA_BYTE_ORDER)
+        return prefix + block_height
 
     def make_value(self) -> bytes:
+
         data = [
-            self.block_generate_count,
-            self.block_validate_count
+            IissDataConverter.encode(self.block_generator),
+            [IissDataConverter.encode(validator_address) for validator_address in self.block_validator_list]
         ]
         return IissDataConverter.dumps(data)
 
     @staticmethod
-    def get_value(address: 'Address', data: bytes) -> 'PrepsData':
+    def get_value(key: bytes, data: bytes) -> 'PrepsData':
         data_list: list = IissDataConverter.loads(data)
         obj = PrepsData()
-        obj.address: 'Address' = address
-        obj.block_generate_count: int = data_list[0]
-        obj.block_validate_count: int = data_list[1]
+        obj.block_height: int = int.from_bytes(key[4:], DATA_BYTE_ORDER)
+        obj.block_generator: 'Address' = IissDataConverter.decode(TypeTag.ADDRESS, data_list[0])
+
+        obj.block_validator_list: list = [IissDataConverter.decode(TypeTag.ADDRESS, bytes_address)
+                                          for bytes_address in data_list[1]]
         return obj
 
 
