@@ -19,6 +19,7 @@ from shutil import rmtree
 from typing import TYPE_CHECKING
 
 from .iiss_msg_data import IissTxData
+from .database.iiss_db import IissDatabase
 
 if TYPE_CHECKING:
     from .iiss_msg_data import IissData
@@ -41,6 +42,7 @@ class IissDataStorage(object):
         self._db: 'IissDatabase' = None
 
     def open(self, path) -> None:
+        # todo: if default path is not None, raise error
         self._current_db_path = os.path.join(path, self._CURRENT_IISS_DB_NAME)
         self._iiss_rc_db_path = os.path.join(self._current_db_path,
                                              "../" + self._IISS_RC_DB_NAME_WITHOUT_BLOCK_HEIGHT)
@@ -68,7 +70,7 @@ class IissDataStorage(object):
 
     def load_last_transaction_index(self) -> int:
         # todo: need to refactor
-        tx_sub_db: 'IissDatabase' = self._db.get_sub_db(IissTxData._prefix)
+        tx_sub_db: 'IissDatabase' = self._db.get_sub_db(IissTxData._prefix.encode())
         last_tx_key, _ = next(tx_sub_db.iterator(reverse=True), (None, None))
         # if there is no tx data, return -1 (as iiss engine increase tx index automatically).
         return int.from_bytes(last_tx_key[2:], "big") + 1 if last_tx_key is not None else -1
