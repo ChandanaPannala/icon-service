@@ -34,6 +34,9 @@ class IissBatch(OrderedDict):
 
 class IissBatchManager(object):
     def __init__(self, recorded_last_transaction_index: int):
+        if recorded_last_transaction_index < -1:
+            # todo: set specific exception
+            raise Exception
         # should increase last transaction index (already used index).
         self._db_transaction_index = recorded_last_transaction_index + 1
         self._iiss_batch_mapper = {}
@@ -42,10 +45,15 @@ class IissBatchManager(object):
         if block_hash in self._iiss_batch_mapper.keys():
             return self._iiss_batch_mapper[block_hash]
         else:
-            return IissBatch(self._db_transaction_index)
+            batch = IissBatch(self._db_transaction_index)
+            self._iiss_batch_mapper[block_hash] = batch
+            return batch
 
     # todo: rename method
-    def update_index_and_clear_mapper(self, block_hash) -> None:
+    def update_index_and_clear_mapper(self, block_hash: bytes) -> None:
+        if block_hash not in self._iiss_batch_mapper.keys():
+            # todo: set specific exception
+            raise Exception
         self._db_transaction_index = self._iiss_batch_mapper[block_hash].batch_transaction_index
 
         self._iiss_batch_mapper.clear()

@@ -23,7 +23,25 @@ class IissDatabase(KeyValueDatabase):
     def __init__(self, db: plyvel.DB) -> None:
         super().__init__(db)
 
+    @staticmethod
+    def from_path(path: str,
+                  create_if_missing: bool = True) -> 'KeyValueDatabase':
+        """
+        :param path: db path
+        :param create_if_missing:
+        :return: KeyValueDatabase instance
+        """
+        db = plyvel.DB(path, create_if_missing=create_if_missing)
+        return IissDatabase(db)
+
+    def get_sub_db(self, prefix: bytes) -> 'IissDatabase':
+        """Return a new prefixed database.
+
+        :param prefix: (bytes): prefix to use
+        """
+        return IissDatabase(self._db.prefixed_db(prefix))
+
     # todo: consider more good method name
     def reset_db(self, path, create_if_missing=True):
-        self._db: 'KeyValueDatabase' = self.from_path(path, create_if_missing=create_if_missing)
+        self._db: plyvel.DB = plyvel.DB(path, create_if_missing=create_if_missing)
 

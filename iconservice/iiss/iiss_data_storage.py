@@ -41,8 +41,9 @@ class IissDataStorage(object):
         self._iiss_rc_db_path: str = ""
         self._db: 'IissDatabase' = None
 
-    def open(self, path) -> None:
+    def open(self, path: str) -> None:
         # todo: if default path is not None, raise error
+        # todo: implement path validation check logic
         self._current_db_path = os.path.join(path, self._CURRENT_IISS_DB_NAME)
         self._iiss_rc_db_path = os.path.join(self._current_db_path,
                                              "../" + self._IISS_RC_DB_NAME_WITHOUT_BLOCK_HEIGHT)
@@ -53,6 +54,7 @@ class IissDataStorage(object):
         """Close the embedded database.
         """
         if self._db:
+            self._db.close()
             self._db = None
 
     def put(self, batch: 'IissBatch', iiss_data: 'IissData') -> None:
@@ -64,7 +66,7 @@ class IissDataStorage(object):
         value: bytes = iiss_data.make_value()
         batch[key] = value
 
-    def commit(self, batch: dict) -> None:
+    def commit(self, batch: 'IissBatch') -> None:
         # todo: batch data check logic
         self._db.write_batch(batch)
 
