@@ -42,6 +42,7 @@ class IissDatabase(KeyValueDatabase):
         return IissDatabase(self._db.prefixed_db(prefix))
 
     # todo: consider more good method name
-    def reset_db(self, path, create_if_missing=True):
+    def reset_db(self, path, create_if_missing: bool = True):
+        self.close()
         self._db: plyvel.DB = plyvel.DB(path, create_if_missing=create_if_missing)
 

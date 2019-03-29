@@ -19,33 +19,33 @@ from collections import OrderedDict
 
 # todo: Ordered dict is not used
 class IissBatch(OrderedDict):
-    def __init__(self, db_transaction_index: int):
+    def __init__(self, db_iiss_tx_index: int):
         super().__init__()
         # index for IissTxData's key
-        self._batch_transaction_index = db_transaction_index
+        self._batch_iiss_tx_index = db_iiss_tx_index
 
     @property
-    def batch_transaction_index(self):
-        return self._batch_transaction_index
+    def batch_iiss_tx_index(self):
+        return self._batch_iiss_tx_index
 
-    def increase_transaction_index(self):
-        self._batch_transaction_index += 1
+    def increase_iiss_tx_index(self):
+        self._batch_iiss_tx_index += 1
 
 
 class IissBatchManager(object):
-    def __init__(self, recorded_last_transaction_index: int):
-        if recorded_last_transaction_index < -1:
+    def __init__(self, recorded_last_iiss_tx_index: int):
+        if recorded_last_iiss_tx_index < -1:
             # todo: set specific exception
             raise Exception
         # should increase last transaction index (already used index).
-        self._db_transaction_index = recorded_last_transaction_index + 1
+        self._db_iiss_tx_index = recorded_last_iiss_tx_index + 1
         self._iiss_batch_mapper = {}
 
     def get_batch(self, block_hash: bytes) -> 'IissBatch':
         if block_hash in self._iiss_batch_mapper.keys():
             return self._iiss_batch_mapper[block_hash]
         else:
-            batch = IissBatch(self._db_transaction_index)
+            batch = IissBatch(self._db_iiss_tx_index)
             self._iiss_batch_mapper[block_hash] = batch
             return batch
 
@@ -54,9 +54,9 @@ class IissBatchManager(object):
         if block_hash not in self._iiss_batch_mapper.keys():
             # todo: set specific exception
             raise Exception
-        self._db_transaction_index = self._iiss_batch_mapper[block_hash].batch_transaction_index
+        self._db_iiss_tx_index = self._iiss_batch_mapper[block_hash].batch_iiss_tx_index
 
         self._iiss_batch_mapper.clear()
 
     def update_index_to_zero(self):
-        self._db_transaction_index = 0
+        self._db_iiss_tx_index = 0

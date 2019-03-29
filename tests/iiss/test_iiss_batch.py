@@ -35,7 +35,7 @@ class TestIissBatchManager(unittest.TestCase):
         for i in range(-1, 5):
             batch_manager = IissBatchManager(i)
             expected_index = i + 1
-            actual_index = batch_manager._db_transaction_index
+            actual_index = batch_manager._db_iiss_tx_index
             self.assertEqual(expected_index, actual_index)
 
     def test_get_batch(self):
@@ -43,21 +43,21 @@ class TestIissBatchManager(unittest.TestCase):
         # set batch to batch manager
         for i in range(0, 10):
             batch = batch_manager.get_batch(i.to_bytes(1, "big"))
+            batch._batch_iiss_tx_index = i
             for j in range(0, i):
                 batch[f"{j}"] = i
-                batch.increase_transaction_index()
 
         # success case: when input non-existing block hash, should return new instance of IissBatch
         batch = batch_manager.get_batch(b'non_exist_block_hash')
-        expected_index = batch_manager._db_transaction_index
-        actual_index = batch.batch_transaction_index
+        expected_index = batch_manager._db_iiss_tx_index
+        actual_index = batch.batch_iiss_tx_index
         self.assertEqual(expected_index, actual_index)
         self.assertEqual(0, len(batch))
 
         # success case: when input existing block hash, should return correct instance of batch
         for i in range(0, 10):
             batch = batch_manager.get_batch(i.to_bytes(1, "big"))
-            actual_batch_tx_index = batch.batch_transaction_index
+            actual_batch_tx_index = batch.batch_iiss_tx_index
             self.assertEqual(i, actual_batch_tx_index)
             for j in range(0, i):
                 self.assertEqual(i, batch[f"{j}"])
@@ -67,7 +67,7 @@ class TestIissBatchManager(unittest.TestCase):
         arbitrary_block_hash = b"block_hash"
         expected_tx_index = 5
         batch = batch_manager.get_batch(arbitrary_block_hash)
-        batch._batch_transaction_index = expected_tx_index
+        batch._batch_iiss_tx_index = expected_tx_index
 
         # failure case: when input non-existing block hash as a param, should raise an error
         self.assertRaises(Exception,
@@ -77,4 +77,5 @@ class TestIissBatchManager(unittest.TestCase):
         # success case: when input existing block hash as a param, db_transaction_index variable
         # should be updated to the batch's transaction index which is mapped with block hash
         batch_manager.update_index_and_clear_mapper(arbitrary_block_hash)
-        self.assertEqual(expected_tx_index, batch_manager._db_transaction_index)
+        actual_tx_index = batch_manager._db_iiss_tx_index
+        self.assertEqual(expected_tx_index, actual_tx_index)
