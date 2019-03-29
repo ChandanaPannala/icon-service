@@ -19,7 +19,7 @@ import unittest
 from typing import TYPE_CHECKING
 
 from iconservice.iiss.iiss_msg_data import IissHeader, IissGovernanceVariable, PrepsData, IissTxData, IissTxType, \
-    DelegationTx, DelegationInfo, ClaimTx, PRepRegisterTx, PRepUnregisterTx
+    DelegationTx, DelegationInfo, PRepRegisterTx, PRepUnregisterTx
 from tests import create_address, rmtree
 
 if TYPE_CHECKING:
@@ -66,13 +66,6 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         delegate_info.address = create_address(data=b'addr4')
         delegate_info.value = 10 ** 20
         self.tx_delegate.data.delegation_info.append(delegate_info)
-
-        self.tx_claim: 'IissTxData' = IissTxData()
-        self.tx_claim.index: int = 2
-        self.tx_claim.address: 'Address' = create_address(data=b'addr5')
-        self.tx_claim.block_height: int = 10 ** 3
-        self.tx_claim.type: 'IissTxType' = IissTxType.CLAIM
-        self.tx_claim.data: 'ClaimTx' = ClaimTx()
 
         self.tx_prep_reg: 'IissTxData' = IissTxData()
         self.tx_prep_reg.index: int = 3
@@ -134,15 +127,6 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.assertEqual(self.tx_delegate.data.delegation_info[0].value, ret_tx.data.delegation_info[0].value)
         self.assertEqual(self.tx_delegate.data.delegation_info[1].address, ret_tx.data.delegation_info[1].address)
         self.assertEqual(self.tx_delegate.data.delegation_info[1].value, ret_tx.data.delegation_info[1].value)
-
-    def test_iiss_tx_data_claim(self):
-        data: bytes = self.tx_claim.make_value()
-        ret_tx: 'IissTxData' = self.tx_claim.get_value(self.tx_claim.index, data)
-
-        self.assertEqual(self.tx_claim.index, ret_tx.index)
-        self.assertEqual(self.tx_claim.address, ret_tx.address)
-        self.assertEqual(self.tx_claim.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_claim.type, ret_tx.type)
 
     def test_iiss_tx_data_preb_reg_tx(self):
         data: bytes = self.tx_prep_reg.make_value()
@@ -217,27 +201,12 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
             print(f"value: {value}")
             print("")
 
-        key: bytes = self.tx_claim.make_key()
-        value: bytes = self.tx_claim.make_value()
-        self.db.put(key, value)
-
-        if self.debug:
-            print("===IISS_TX_DATA-2===")
-            print(f"index: {self.tx_claim.index}")
-            print(f"address: {self.tx_claim.address}")
-            print(f"block_height: {self.tx_claim.block_height}")
-            print(f"type: {self.tx_claim.type}")
-            print(f"data: {self.tx_claim.data.encode()}")
-            print(f"key: {key}")
-            print(f"value: {value}")
-            print("")
-
         key: bytes = self.tx_prep_reg.make_key()
         value: bytes = self.tx_prep_reg.make_value()
         self.db.put(key, value)
 
         if self.debug:
-            print("===IISS_TX_DATA-3===")
+            print("===IISS_TX_DATA-2===")
             print(f"index: {self.tx_prep_reg.index}")
             print(f"address: {self.tx_prep_reg.address}")
             print(f"block_height: {self.tx_prep_reg.block_height}")
@@ -252,7 +221,7 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.db.put(key, value)
 
         if self.debug:
-            print("===IISS_TX_DATA-4===")
+            print("===IISS_TX_DATA-3===")
             print(f"index: {self.tx_prep_un_reg.index}")
             print(f"address: {self.tx_prep_un_reg.address}")
             print(f"block_height: {self.tx_prep_un_reg.block_height}")
@@ -299,15 +268,6 @@ class TestIissDataUsingLevelDB(unittest.TestCase):
         self.assertEqual(self.tx_delegate.data.delegation_info[0].value, ret_tx.data.delegation_info[0].value)
         self.assertEqual(self.tx_delegate.data.delegation_info[1].address, ret_tx.data.delegation_info[1].address)
         self.assertEqual(self.tx_delegate.data.delegation_info[1].value, ret_tx.data.delegation_info[1].value)
-
-        key: bytes = self.tx_claim.make_key()
-        value = self.db.get(key)
-        ret_tx: 'IissTxData' = self.tx_claim.get_value(self.tx_claim.index, value)
-
-        self.assertEqual(self.tx_claim.index, ret_tx.index)
-        self.assertEqual(self.tx_claim.address, ret_tx.address)
-        self.assertEqual(self.tx_claim.block_height, ret_tx.block_height)
-        self.assertEqual(self.tx_claim.type, ret_tx.type)
 
         key: bytes = self.tx_prep_reg.make_key()
         value = self.db.get(key)

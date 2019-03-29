@@ -28,9 +28,8 @@ if TYPE_CHECKING:
 
 class IissTxType(IntEnum):
     DELEGATION = 0
-    CLAIM = 1
-    PREP_REGISTER = 2
-    PREP_UNREGISTER = 3
+    PREP_REGISTER = 1
+    PREP_UNREGISTER = 2
     INVALID = 99
 
 
@@ -200,8 +199,6 @@ class IissTxData(IissData):
     def _covert_tx_data(tx_type: 'IissTxType', data: tuple) -> Any:
         if tx_type == IissTxType.DELEGATION:
             return DelegationTx.decode(data)
-        elif tx_type == IissTxType.CLAIM:
-            return ClaimTx.decode(data)
         elif tx_type == IissTxType.PREP_REGISTER:
             return PRepRegisterTx.decode(data)
         elif tx_type == IissTxType.PREP_UNREGISTER:
@@ -257,22 +254,6 @@ class DelegationInfo(object):
         obj = DelegationInfo()
         obj.address: 'Address' = data[0]
         obj.value: int = data[1]
-        return obj
-
-
-class ClaimTx(IissTx):
-    def __init__(self):
-        pass
-
-    def get_type(self) -> 'IissTxType':
-        return IissTxType.CLAIM
-
-    def encode(self) -> tuple:
-        return IissDataConverter.encode_any(None)
-
-    @staticmethod
-    def decode(data: tuple) -> 'ClaimTx':
-        obj = ClaimTx()
         return obj
 
 

@@ -17,7 +17,7 @@
 from typing import TYPE_CHECKING
 
 from .iiss_msg_data import IissHeader, IissGovernanceVariable, PrepsData, IissTxData, \
-    DelegationTx, DelegationInfo, ClaimTx, PRepRegisterTx, PRepUnregisterTx
+    DelegationTx, DelegationInfo, PRepRegisterTx, PRepUnregisterTx
 
 if TYPE_CHECKING:
     from ..base.address import Address
@@ -68,11 +68,6 @@ class IissDataCreator:
         info.address: 'Address' = address
         info.value: int = value
         return info
-
-    @staticmethod
-    def create_tx_claim() -> 'ClaimTx':
-        tx = ClaimTx()
-        return tx
 
     @staticmethod
     def create_tx_prep_reg() -> 'PRepRegisterTx':
